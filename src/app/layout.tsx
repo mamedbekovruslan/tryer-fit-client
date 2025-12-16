@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "@mantine/core/styles.css";
+import "@mantine/dropzone/styles.css";
+import "@mantine/dates/styles.css";
+import {ThemeProvider} from "@/components/ThemeContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
