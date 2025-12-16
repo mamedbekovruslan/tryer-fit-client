@@ -11,7 +11,7 @@ export default function Home() {
       <Container size="sm" fluid style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
         <Paper radius="md" p="xl" withBorder shadow="md" w={500}>
           <Title order={2} ta="center" mb="lg">
-            Добро пожаловать
+            Tryer Fit
           </Title>
 
           <AuthForm />
