@@ -14,7 +14,6 @@ export default function ThemeToggle() {
   }, []);
 
   if (!isMounted) {
-    // Возвращаем пустой элемент до завершения гидратации
     return <div style={{ width: 36, height: 36 }} />;
   }
 

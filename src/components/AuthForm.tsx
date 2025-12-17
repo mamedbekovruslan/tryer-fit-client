@@ -5,13 +5,9 @@ import {
   TextInput,
   PasswordInput,
   Button,
-  Title,
   Text,
   Anchor,
-  Container,
   Group,
-  Paper,
-  Radio,
   Select,
   NumberInput,
   Divider,
@@ -21,14 +17,13 @@ import {
 import { DateInput } from '@mantine/dates';
 import { Dropzone } from '@mantine/dropzone';
 import { DropzoneAccept, DropzoneReject, DropzoneIdle } from '@mantine/dropzone';
-import ThemeToggle from './ThemeToggle';
+import { IoIosArrowBack } from 'react-icons/io';
 
 export default function AuthForm() {
-  const [isLogin, setIsLogin] = useState(true); // true = login, false = register
-  const [userType, setUserType] = useState<'client' | 'trainer'>('client'); // для регистрации
-  
-  if (isLogin) {
-    // Форма входа
+  const [isLoginForm, setIsLoginForm] = useState(true);
+  const [userType, setUserType] = useState<'client' | 'trainer'>('client');
+
+  if (isLoginForm) {
     return (
       <form onSubmit={(e) => e.preventDefault()}>
         <TextInput
@@ -56,11 +51,11 @@ export default function AuthForm() {
         
         <Text ta="center" mt="md">
           Нет аккаунта?{' '}
-          <Anchor 
-            component="button" 
-            type="button" 
+          <Anchor
+            component="button"
+            type="button"
             fw={500}
-            onClick={() => setIsLogin(false)}
+            onClick={() => setIsLoginForm(false)}
           >
             Зарегистрироваться
           </Anchor>
@@ -68,9 +63,27 @@ export default function AuthForm() {
       </form>
     );
   } else {
-    // Форма регистрации
     return (
-      <form onSubmit={(e) => e.preventDefault()}>
+      <form onSubmit={(e) => e.preventDefault()} style={{ position: 'relative' }}>
+        <div style={{ marginBottom: "1rem", position: "absolute", top: "-54px", left: "-11px" }}>
+          <button
+            type="button"
+            onClick={() => setIsLoginForm(true)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '0.5rem',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            title="Вернуться к авторизации"
+          >
+            <IoIosArrowBack size={20} />
+          </button>
+        </div>
+
         <Tabs value={userType} onChange={(value: string | null) => value && setUserType(value as 'client' | 'trainer')} mb="md">
           <Tabs.List>
             <Tabs.Tab value="client">Клиент</Tabs.Tab>
@@ -80,7 +93,6 @@ export default function AuthForm() {
 
         <Divider my="sm" />
 
-        {/* Общие поля для всех пользователей */}
         <TextInput
           label="Фамилия"
           placeholder="Иванов"
@@ -151,7 +163,6 @@ export default function AuthForm() {
           mt="md"
         />
 
-        {/* Поля для клиента */}
         {userType === 'client' && (
           <>
             <DateInput
@@ -162,7 +173,6 @@ export default function AuthForm() {
           </>
         )}
 
-        {/* Поля для тренера */}
         {userType === 'trainer' && (
           <>
             <DateInput
@@ -227,11 +237,11 @@ export default function AuthForm() {
 
         <Text ta="center" mt="md">
           Уже есть аккаунт?{' '}
-          <Anchor 
-            component="button" 
-            type="button" 
+          <Anchor
+            component="button"
+            type="button"
             fw={500}
-            onClick={() => setIsLogin(true)}
+            onClick={() => setIsLoginForm(true)}
           >
             Войти
           </Anchor>

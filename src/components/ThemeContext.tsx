@@ -3,23 +3,19 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { MantineProvider, ColorScheme } from '@mantine/core';
 
-// Создаем контекст для управления темой
 const ThemeContext = createContext<{
   colorScheme: ColorScheme;
   toggleColorScheme: () => void;
 } | undefined>(undefined);
 
-// Провайдер контекста темы
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [colorScheme, setColorScheme] = useState<ColorScheme>('light');
 
   useEffect(() => {
-    // Проверяем сохраненную тему в localStorage или определяем по системным настройкам
     const savedTheme = localStorage.getItem('mantine-color-scheme');
     if (savedTheme === 'dark' || savedTheme === 'light') {
       setColorScheme(savedTheme as ColorScheme);
     } else {
-      // Определяем системную тему
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setColorScheme(systemPrefersDark ? 'dark' : 'light');
     }
@@ -40,7 +36,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Хук для использования контекста темы
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
