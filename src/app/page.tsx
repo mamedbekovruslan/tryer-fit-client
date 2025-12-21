@@ -1,5 +1,5 @@
 import { Title, Container, Paper, Group } from '@mantine/core';
-import AuthForm from '../components/AuthForm';
+import AuthForm from '../features/auth/AuthForm';
 import ThemeToggle from '../components/ThemeToggle';
 
 export default function Home() {
