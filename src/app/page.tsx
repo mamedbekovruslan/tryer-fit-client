@@ -3,10 +3,8 @@
 import { Title, Container, Paper, Group, Text, Alert } from '@mantine/core';
 import AuthForm from '@/features/auth/AuthForm';
 import ThemeToggle from '@/components/ThemeToggle';
-import { useBackendConnection } from '@/features/auth/hooks/useBackendConnection';
 
 export default function Home() {
-  const { message, loading, error } = useBackendConnection();
 
   return (
     <>
@@ -18,18 +16,6 @@ export default function Home() {
           <Title order={2} ta="center" mb="lg">
             Tryer Fit
           </Title>
-
-          {loading ? (
-            <Text ta="center" c="dimmed" mb="md">Connecting to backend...</Text>
-          ) : error ? (
-            <Alert title="Connection Error" color="red" mb="md">
-              {error}
-            </Alert>
-          ) : (
-            <Alert title="Backend Connected" color="green" mb="md">
-              Message from backend: {message}
-            </Alert>
-          )}
 
           <AuthForm />
         </Paper>
