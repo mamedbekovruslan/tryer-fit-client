@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import LoginForm from './components/LoginForm';
-import RegisterForm from './components/RegisterForm';
+import { default as RegisterForm } from '@/features/auth/components/RegisterForm';
 
 export default function AuthForm() {
   const [isLoginForm, setIsLoginForm] = useState(true);
