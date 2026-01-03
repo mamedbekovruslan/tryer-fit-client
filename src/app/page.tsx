@@ -1,25 +1,14 @@
 'use client';
 
-import { Title, Container, Paper, Group, Text, Alert } from '@mantine/core';
-import AuthForm from '@/features/auth/AuthForm';
-import ThemeToggle from '@/components/ThemeToggle';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
 
-  return (
-    <>
-      <Group justify="flex-end" style={{ position: 'fixed', right: '20px', top: '20px', zIndex: 1000 }}>
-        <ThemeToggle />
-      </Group>
-      <Container size="sm" fluid style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
-        <Paper radius="md" p="xl" withBorder shadow="md" w={500}>
-          <Title order={2} ta="center" mb="lg">
-            Tryer Fit
-          </Title>
+  useEffect(() => {
+    router.push('/auth/login');
+  }, [router]);
 
-          <AuthForm />
-        </Paper>
-      </Container>
-    </>
-  );
+  return null;
 }

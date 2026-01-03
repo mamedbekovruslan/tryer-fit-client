@@ -89,8 +89,8 @@ export const useRegisterFormState = (): RegisterFormState => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [gender, setGender] = useState('');
-  const [height, setHeight] = useState<number | ''>('');
-  const [weight, setWeight] = useState<number | ''>('');
+  const [height, setHeight] = useState<string | number>('');
+  const [weight, setWeight] = useState<string | number>('');
   const [phone, setPhone] = useState('');
   const [birthDate, setBirthDate] = useState<DateValue | null>(null);
 
@@ -102,11 +102,11 @@ export const useRegisterFormState = (): RegisterFormState => {
   const [certificateNumber, setCertificateNumber] = useState('');
 
   // Состояния для профиля клиента
-  const [waistCircumference, setWaistCircumference] = useState<number | ''>('');
-  const [chestCircumference, setChestCircumference] = useState<number | ''>('');
-  const [hipCircumference, setHipCircumference] = useState<number | ''>('');
-  const [armCircumference, setArmCircumference] = useState<number | ''>('');
-  const [legCircumference, setLegCircumference] = useState<number | ''>('');
+  const [waistCircumference, setWaistCircumference] = useState<string | number>('');
+  const [chestCircumference, setChestCircumference] = useState<string | number>('');
+  const [hipCircumference, setHipCircumference] = useState<string | number>('');
+  const [armCircumference, setArmCircumference] = useState<string | number>('');
+  const [legCircumference, setLegCircumference] = useState<string | number>('');
   const [fitnessGoal, setFitnessGoal] = useState<string>('');
   const [expectedResult, setExpectedResult] = useState<string>('');
   const [contraindications, setContraindications] = useState<string>('');

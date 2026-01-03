@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { Button, Text, Anchor, Tabs, Divider, Alert } from '@mantine/core';
 import { DateValue } from '@mantine/dates';
 import { IoIosArrowBack } from 'react-icons/io';
-import ClientRegistrationForm from '@/features/auth/components/ClientRegistrationForm'; // Путь к существующему компоненту
-import TrainerRegistrationForm from '@/features/auth/components/TrainerRegistrationForm'; // Путь к существующему компоненту
-import { useRegisterFormState, RegisterFormValues, RegisterFormHandlers } from './hooks/useRegisterFormState';
-import { useRegisterFormSubmit } from './hooks/useRegisterFormSubmit';
+import ClientRegistrationForm from '@/features/auth/register/client/ui/ClientRegistrationForm'; // Путь к существующему компоненту
+import TrainerRegistrationForm from '@/features/auth/register/trainer/ui/TrainerRegistrationForm'; // Путь к существующему компоненту
+import { useRegisterFormState, RegisterFormValues, RegisterFormHandlers } from '@/features/auth/register/common/hooks/useRegisterFormState';
+import { useRegisterFormSubmit } from '@/features/auth/register/common/hooks/useRegisterFormSubmit';
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
@@ -16,7 +16,7 @@ interface RegisterFormProps {
 // Тип для объединения значений и обработчиков
 type CommonFields = RegisterFormValues & RegisterFormHandlers;
 
-// Тип для адаптированных полей, совместимых с существующими компонентами
+// Тип для адаптированных полей, совместимых с компонентами (number | '')
 interface AdaptedCommonFields {
   // Значения
   lastName: string;
@@ -91,7 +91,7 @@ interface AdaptedCommonFields {
 
 export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const [userType, setUserType] = useState<'client' | 'trainer'>('client');
-  
+
   const formState = useRegisterFormState();
   const { handleSubmit: handleFormSubmit, loading, error } = useRegisterFormSubmit();
 
@@ -99,7 +99,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     await handleFormSubmit(e, formState, onSwitchToLogin);
   };
 
-  // Адаптер для конвертации типов между хуком и компонентами
+  // Адаптер для конвертации типов между хуком (string | number) и компонентами (number | '')
   const adaptedCommonFields: AdaptedCommonFields = {
     // Значения
     lastName: formState.lastName,
@@ -109,8 +109,8 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     password: formState.password,
     confirmPassword: formState.confirmPassword,
     gender: formState.gender,
-    height: typeof formState.height === 'string' ? (formState.height === '' ? '' : Number(formState.height)) : formState.height || '',
-    weight: typeof formState.weight === 'string' ? (formState.weight === '' ? '' : Number(formState.weight)) : formState.weight || '',
+    height: typeof formState.height === 'number' ? (formState.height === 0 ? 0 : formState.height) : formState.height === '' ? '' : Number(formState.height),
+    weight: typeof formState.weight === 'number' ? (formState.weight === 0 ? 0 : formState.weight) : formState.weight === '' ? '' : Number(formState.weight),
     phone: formState.phone,
     birthDate: formState.birthDate,
     education: formState.education,
@@ -118,11 +118,11 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     degree: formState.degree,
     specialization: formState.specialization,
     certificateNumber: formState.certificateNumber,
-    waistCircumference: typeof formState.waistCircumference === 'string' ? (formState.waistCircumference === '' ? '' : Number(formState.waistCircumference)) : formState.waistCircumference || '',
-    chestCircumference: typeof formState.chestCircumference === 'string' ? (formState.chestCircumference === '' ? '' : Number(formState.chestCircumference)) : formState.chestCircumference || '',
-    hipCircumference: typeof formState.hipCircumference === 'string' ? (formState.hipCircumference === '' ? '' : Number(formState.hipCircumference)) : formState.hipCircumference || '',
-    armCircumference: typeof formState.armCircumference === 'string' ? (formState.armCircumference === '' ? '' : Number(formState.armCircumference)) : formState.armCircumference || '',
-    legCircumference: typeof formState.legCircumference === 'string' ? (formState.legCircumference === '' ? '' : Number(formState.legCircumference)) : formState.legCircumference || '',
+    waistCircumference: typeof formState.waistCircumference === 'number' ? (formState.waistCircumference === 0 ? 0 : formState.waistCircumference) : formState.waistCircumference === '' ? '' : Number(formState.waistCircumference),
+    chestCircumference: typeof formState.chestCircumference === 'number' ? (formState.chestCircumference === 0 ? 0 : formState.chestCircumference) : formState.chestCircumference === '' ? '' : Number(formState.chestCircumference),
+    hipCircumference: typeof formState.hipCircumference === 'number' ? (formState.hipCircumference === 0 ? 0 : formState.hipCircumference) : formState.hipCircumference === '' ? '' : Number(formState.hipCircumference),
+    armCircumference: typeof formState.armCircumference === 'number' ? (formState.armCircumference === 0 ? 0 : formState.armCircumference) : formState.armCircumference === '' ? '' : Number(formState.armCircumference),
+    legCircumference: typeof formState.legCircumference === 'number' ? (formState.legCircumference === 0 ? 0 : formState.legCircumference) : formState.legCircumference === '' ? '' : Number(formState.legCircumference),
     fitnessGoal: formState.fitnessGoal,
     expectedResult: formState.expectedResult,
     contraindications: formState.contraindications,

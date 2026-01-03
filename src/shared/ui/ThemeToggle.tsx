@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ActionIcon } from '@mantine/core';
 import { FaSun, FaMoon } from 'react-icons/fa';
-import { useTheme } from './ThemeContext';
+import { useTheme } from '@/providers/ThemeProvider';
 
 export default function ThemeToggle() {
   const [isMounted, setIsMounted] = useState(false);
