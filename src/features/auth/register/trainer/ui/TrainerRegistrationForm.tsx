@@ -9,7 +9,7 @@ import {
 import { DateInput } from '@mantine/dates';
 import { Dropzone } from '@mantine/dropzone';
 import { DropzoneAccept, DropzoneReject, DropzoneIdle } from '@mantine/dropzone';
-import { DateValue } from '@mantine/dates/lib/types';
+import { DateValue } from '@mantine/dates';
 
 interface TrainerRegistrationFormProps {
   commonFields: {

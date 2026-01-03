@@ -3,18 +3,12 @@ import {
   PasswordInput,
   Select,
   NumberInput,
-  TextInputProps,
-  PasswordInputProps,
-  SelectProps,
-  NumberInputProps,
   Divider,
-  TextareaProps,
   Textarea,
-  Stack,
   Title,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
-import { DateValue } from '@mantine/dates/lib/types';
+import { DateValue } from '@mantine/dates';
 import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { FiUpload, FiImage, FiX } from 'react-icons/fi';
 import { Group, Text } from '@mantine/core';
