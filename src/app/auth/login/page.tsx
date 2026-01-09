@@ -1,10 +1,19 @@
 'use client';
 
-import { Title, Container, Paper, Group, Text } from '@mantine/core';
+import { useState, useEffect } from 'react';
+import { Title, Container, Paper, Group, Button } from '@mantine/core';
 import LoginForm from '@/features/auth/login/ui/LoginForm';
+import { default as RegisterForm } from '@/features/auth/ui/RegisterForm/RegisterForm';
 import ThemeToggle from '@/shared/ui/ThemeToggle';
 
 export default function LoginPage() {
+  const [isLoginView, setIsLoginView] = useState(true);
+
+  // Убедимся, что отображается форма логина
+  useEffect(() => {
+    setIsLoginView(true);
+  }, []);
+
   return (
     <>
       <Group justify="flex-end" style={{ position: 'fixed', right: '20px', top: '20px', zIndex: 1000 }}>
@@ -16,7 +25,16 @@ export default function LoginPage() {
             Tryer Fit - Вход
           </Title>
 
-          <LoginForm onSwitchToRegister={() => window.location.href = '/auth/register'} />
+          <LoginForm onSwitchToRegister={() => setIsLoginView(false)} />
+          
+          <Button 
+            variant="subtle" 
+            fullWidth 
+            mt="md"
+            onClick={() => setIsLoginView(false)}
+          >
+            Нет аккаунта? Зарегистрироваться
+          </Button>
         </Paper>
       </Container>
     </>

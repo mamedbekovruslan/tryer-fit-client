@@ -96,7 +96,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const { handleSubmit: handleFormSubmit, loading, error } = useRegisterFormSubmit();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    await handleFormSubmit(e, formState, onSwitchToLogin);
+    await handleFormSubmit(e, formState, userType, onSwitchToLogin);
   };
 
   // Адаптер для конвертации типов между хуком (string | number) и компонентами (number | '')

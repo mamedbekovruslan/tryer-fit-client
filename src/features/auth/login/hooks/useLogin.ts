@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { clientService } from '@/services/clientService';
+import { authService } from '@/services/authService';
+import { useAuth } from '@/providers/AuthProvider';
 
 export interface LoginHandler {
-  handleLogin: (email: string, password: string) => Promise<void>;
+  handleLogin: (email: string, password: string, onSuccess?: () => void) => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -10,23 +11,29 @@ export interface LoginHandler {
 export const useLogin = (): LoginHandler => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { login } = useAuth();
 
-  const handleLogin = async (email: string, password: string) => {
+  const handleLogin = async (email: string, password: string, onSuccess?: () => void) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Здесь должна быть реализация логина
-      // Временно оставим заглушку
-      console.log('Login attempt with:', { email, password });
-      
-      // В реальной реализации здесь будет вызов API для аутентификации
-      // const response = await authService.login({ email, password });
-      
-      // После успешного логина, возможно, нужно сохранить токен и т.д.
-    } catch (err) {
+      const response = await authService.login({ email, password });
+
+      // Use the auth context to store the token and user data
+      login(response.access_token, response.user);
+
+      // Call the success callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (err: any) {
       console.error('Login error:', err);
-      setError('Ошибка входа. Пожалуйста, проверьте введенные данные и попробуйте снова.');
+      if (err.response?.status === 401) {
+        setError('Неверные учетные данные. Пожалуйста, проверьте email и пароль.');
+      } else {
+        setError('Ошибка входа. Пожалуйста, проверьте введенные данные и попробуйте снова.');
+      }
     } finally {
       setLoading(false);
     }

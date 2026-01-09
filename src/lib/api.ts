@@ -11,11 +11,10 @@ const apiClient = axios.create({
 // Интерсептор запросов для добавления токенов аутентификации при необходимости
 apiClient.interceptors.request.use(
   (config) => {
-    // Вы можете добавить заголовки аутентификации здесь позже
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {

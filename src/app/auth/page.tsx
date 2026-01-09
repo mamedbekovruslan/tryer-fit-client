@@ -1,18 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Title, Container, Paper, Group, Button } from '@mantine/core';
 import LoginForm from '@/features/auth/login/ui/LoginForm';
 import { default as RegisterForm } from '@/features/auth/ui/RegisterForm/RegisterForm';
 import ThemeToggle from '@/shared/ui/ThemeToggle';
 
-export default function RegisterPage() {
-  const [isLoginView, setIsLoginView] = useState(false);
-
-  // Убедимся, что отображается форма регистрации
-  useEffect(() => {
-    setIsLoginView(false);
-  }, []);
+export default function AuthPage() {
+  const [isLoginView, setIsLoginView] = useState(true);
 
   return (
     <>
@@ -22,19 +17,14 @@ export default function RegisterPage() {
       <Container size="sm" fluid style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
         <Paper radius="md" p="xl" withBorder shadow="md" w={500}>
           <Title order={2} ta="center" mb="lg">
-            Tryer Fit - Регистрация
+            {isLoginView ? 'Tryer Fit - Вход' : 'Tryer Fit - Регистрация'}
           </Title>
 
-          <RegisterForm onSwitchToLogin={() => setIsLoginView(true)} />
-          
-          <Button 
-            variant="subtle" 
-            fullWidth 
-            mt="md"
-            onClick={() => setIsLoginView(true)}
-          >
-            Уже есть аккаунт? Войти
-          </Button>
+          {isLoginView ? (
+            <LoginForm onSwitchToRegister={() => setIsLoginView(false)} />
+          ) : (
+            <RegisterForm onSwitchToLogin={() => setIsLoginView(true)} />
+          )}
         </Paper>
       </Container>
     </>

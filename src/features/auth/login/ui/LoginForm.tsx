@@ -16,7 +16,10 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await handleLogin(email, password);
+    await handleLogin(email, password, () => {
+      // Перенаправление на главную страницу после успешного входа
+      window.location.href = '/home';
+    });
   };
 
   return (
