@@ -5,14 +5,17 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface AuthUser {
+  id: number;
+  email: string;
+  username: string;
+  user_type: 'client' | 'trainer';
+  trainer?: any; // Информация о тренере для клиентов
+}
+
 export interface LoginResponse {
   access_token: string;
-  user: {
-    id: number;
-    email: string;
-    username: string;
-    user_type: 'client' | 'trainer';
-  };
+  user: AuthUser;
 }
 
 export const authService = {

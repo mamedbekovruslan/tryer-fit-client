@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppShell, Header, Navbar, Text, MediaQuery, Burger, useMantineTheme, Container } from '@mantine/core';
+import { AppShell, Text, Burger, useMantineTheme, Container } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useAuth } from '@/providers/AuthProvider';
 

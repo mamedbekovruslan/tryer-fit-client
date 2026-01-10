@@ -1,18 +1,24 @@
 'use client';
 
-import { useState } from 'react';
-import { Container, Title, Text, Paper, Button, Group } from '@mantine/core';
+import { useState, useEffect } from 'react';
+import { Container, Title, Text, Paper, Stack } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import TrainerInfoCard from '@/components/TrainerInfoCard';
 
 export default function HomePage() {
-  const { user, logout } = useAuth();
+  const { user, refreshUserProfile } = useAuth();
   const [logoutRequested, setLogoutRequested] = useState(false);
 
-  const handleLogout = () => {
-    setLogoutRequested(true);
-    logout();
-  };
+  useEffect(() => {
+    // Обновляем профиль пользователя при загрузке страницы, если у нас нет информации о пользователе
+    if (!user && typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token) {
+        refreshUserProfile();
+      }
+    }
+  }, [user, refreshUserProfile]);
 
   // Показываем защищенное содержимое только если пользователь аутентифицирован
   return (
@@ -27,14 +33,13 @@ export default function HomePage() {
           </Text>
 
           <Text size="md" mb="xl">
-            Это защищенная главная страница. Только авторизованные пользователи могут получить к ней доступ.
+            Это защищенное главная страница. Только авторизованные пользователи могут получить к ней доступ.
           </Text>
 
-          <Group justify="center">
-            <Button onClick={handleLogout} color="red">
-              Выйти
-            </Button>
-          </Group>
+          {/* Карточка информации о тренере */}
+          <Stack gap="xl" mt="xl">
+            <TrainerInfoCard trainer={user?.trainer} />
+          </Stack>
         </Paper>
       </Container>
     </ProtectedRoute>

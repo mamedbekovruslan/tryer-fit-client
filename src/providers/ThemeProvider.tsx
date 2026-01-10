@@ -1,7 +1,9 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { MantineProvider, ColorScheme } from '@mantine/core';
+import { MantineProvider } from '@mantine/core';
+
+type ColorScheme = 'light' | 'dark';
 
 const ThemeContext = createContext<{
   colorScheme: ColorScheme;
@@ -29,7 +31,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   return (
     <ThemeContext.Provider value={{ colorScheme, toggleColorScheme }}>
-      <MantineProvider theme={{ colorScheme }} forceColorScheme={colorScheme}>
+      <MantineProvider defaultColorScheme={colorScheme}>
         {children}
       </MantineProvider>
     </ThemeContext.Provider>
