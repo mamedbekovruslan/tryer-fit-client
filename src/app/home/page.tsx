@@ -32,10 +32,6 @@ export default function HomePage() {
             Вы успешно вошли в систему как <strong>{user?.user_type}</strong>.
           </Text>
 
-          <Text size="md" mb="xl">
-            Это защищенное главная страница. Только авторизованные пользователи могут получить к ней доступ.
-          </Text>
-
           {/* Карточка информации о тренере */}
           <Stack gap="xl" mt="xl">
             <TrainerInfoCard trainer={user?.trainer} />

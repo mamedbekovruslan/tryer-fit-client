@@ -1,9 +1,10 @@
 'use client';
 
 import { Avatar, Menu, Text, Divider } from '@mantine/core';
-import { FiLogOut } from 'react-icons/fi';
+import { FiLogOut, FiUser } from 'react-icons/fi';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export const UserProfileDropdown = () => {
   const { user, logout } = useAuth();
@@ -36,6 +37,14 @@ export const UserProfileDropdown = () => {
         <Menu.Label>
           <Text size="sm">{user.username}</Text>
         </Menu.Label>
+
+        <Menu.Item
+          leftSection={<FiUser size={16} />}
+          component={Link}
+          href="/profile"
+        >
+          Профиль
+        </Menu.Item>
 
         <Divider />
 
