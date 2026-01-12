@@ -1,28 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Список защищенных маршрутов
-const protectedRoutes = ['/home'];
+const protectedRoutes = ['/home', '/profile'];
+
+// Функция для проверки валидности JWT токена
+function isTokenValid(token: string | null): boolean {
+  if (!token) return false;
+
+  try {
+    // Разбиваем токен на части (header.payload.signature)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return false; // Некорректный формат токена
+    }
+
+    // Декодируем payload (вторая часть)
+    const payload = JSON.parse(atob(parts[1]));
+
+    // Проверяем, не истек ли токен (exp - время истечения в секундах)
+    const currentTime = Math.floor(Date.now() / 1000);
+    return payload.exp > currentTime;
+  } catch (error) {
+    console.error('Ошибка при проверке токена:', error);
+    return false;
+  }
+}
 
 export function middleware(request: NextRequest) {
   // Проверяем, является ли текущий маршрут защищенным
-  const isProtectedRoute = protectedRoutes.some(route => 
+  const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
   );
 
   if (isProtectedRoute) {
     // Получаем токен из cookies (если он там хранится)
     const token = request.cookies.get('token')?.value;
-    
-    // Или проверяем, есть ли токен в localStorage (это сложнее сделать на сервере)
-    // Поэтому мы можем перенаправлять на клиентскую проверку
-    
+
+    // Проверяем, не истек ли токен
+    if (token && !isTokenValid(token)) {
+      // Если токен истек, удаляем его и перенаправляем на страницу входа
+      return NextResponse.redirect(new URL('/auth', request.url));
+    }
+
     // Если токена нет, перенаправляем на страницу входа
     if (!token) {
-      // Так как на сервере нет localStorage, мы не можем проверить его напрямую
-      // Вместо этого, мы можем использовать заголовки или другие механизмы
-      
-      // Для простоты, возвращаем ответ, который будет обработан на клиенте
-      return NextResponse.next();
+      return NextResponse.redirect(new URL('/auth', request.url));
     }
   }
 

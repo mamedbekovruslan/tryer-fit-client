@@ -30,6 +30,21 @@ apiClient.interceptors.response.use(
   (error) => {
     // Обработка глобальных ошибок ответов здесь
     console.error('Ошибка API:', error);
+
+    // Проверяем, является ли ошибка связанной с аутентификацией (401 Unauthorized)
+    if (error.response && error.response.status === 401) {
+      // Удаляем токен из localStorage, чтобы пользователь был разлогинен
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+
+      // Вызываем событие storage, чтобы другие вкладки узнали об изменении
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'token',
+        oldValue: localStorage.getItem('token'),
+        newValue: null,
+      }));
+    }
+
     return Promise.reject(error);
   }
 );

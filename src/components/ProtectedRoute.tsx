@@ -9,12 +9,46 @@ interface ProtectedRouteProps {
   fallback?: React.ReactNode; // Компонент, который отображается при отсутствии аутентификации
 }
 
+// Функция для проверки валидности JWT токена
+function isTokenValid(token: string | null): boolean {
+  if (!token) return false;
+
+  try {
+    // Разбиваем токен на части (header.payload.signature)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return false; // Некорректный формат токена
+    }
+
+    // Декодируем payload (вторая часть)
+    const payload = JSON.parse(atob(parts[1]));
+
+    // Проверяем, не истек ли токен (exp - время истечения в секундах)
+    const currentTime = Math.floor(Date.now() / 1000);
+    return payload.exp > currentTime;
+  } catch (error) {
+    console.error('Ошибка при проверке токена:', error);
+    return false;
+  }
+}
+
 export default function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
-  const { isAuthenticated, checkAuthStatus } = useAuth();
+  const { isAuthenticated, checkAuthStatus, logout } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+
+    // Проверяем, не истек ли токен
+    if (!isTokenValid(token)) {
+      // Если токен истек, выполняем logout
+      logout();
+      router.push('/auth');
+      setLoading(false);
+      return;
+    }
+
     // Проверяем статус аутентификации при монтировании компонента
     if (!checkAuthStatus()) {
       // Если пользователь не аутентифицирован, перенаправляем на страницу входа
@@ -22,7 +56,7 @@ export default function ProtectedRoute({ children, fallback }: ProtectedRoutePro
     } else {
       setLoading(false);
     }
-  }, [checkAuthStatus, router]);
+  }, [checkAuthStatus, router, logout]);
 
   // Если идет проверка аутентификации, можно показать лоадер
   if (loading) {

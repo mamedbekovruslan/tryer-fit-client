@@ -15,6 +15,29 @@ interface AuthContextType {
   refreshUserProfile: () => Promise<void>;
 }
 
+// Функция для проверки валидности JWT токена
+function isTokenValid(token: string | null): boolean {
+  if (!token) return false;
+
+  try {
+    // Разбиваем токен на части (header.payload.signature)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return false; // Некорректный формат токена
+    }
+
+    // Декодируем payload (вторая часть)
+    const payload = JSON.parse(atob(parts[1]));
+
+    // Проверяем, не истек ли токен (exp - время истечения в секундах)
+    const currentTime = Math.floor(Date.now() / 1000);
+    return payload.exp > currentTime;
+  } catch (error) {
+    console.error('Ошибка при проверке токена:', error);
+    return false;
+  }
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -25,20 +48,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check for existing token in localStorage on initial load
     const storedToken = localStorage.getItem('token');
 
-    if (storedToken) {
+    // Проверяем, не истек ли токен
+    if (storedToken && isTokenValid(storedToken)) {
       setToken(storedToken);
       // Automatically fetch user profile if token exists
       refreshUserProfile();
+    } else if (storedToken) {
+      // Если токен существует, но истек, удаляем его
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
     }
 
     // Listen for storage changes (e.g. logout from another tab)
     const handleStorageChange = () => {
       const currentToken = localStorage.getItem('token');
 
-      if (currentToken) {
+      if (currentToken && isTokenValid(currentToken)) {
         setToken(currentToken);
         // Refresh user profile if token exists
         refreshUserProfile();
+      } else if (currentToken) {
+        // Если токен существует, но истек, удаляем его
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
       } else {
         setToken(null);
         setUser(null);
@@ -53,6 +89,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []); // Убрали user из зависимостей, чтобы useEffect не запускался при каждом изменении пользователя
 
   const login = (token: string, user: AuthUser) => {
+    // Проверяем, не истек ли токен перед входом
+    if (!isTokenValid(token)) {
+      console.error('Попытка входа с истекшим токеном');
+      return;
+    }
+
     console.log('Logging in user in provider:', user); // Логируем информацию о пользователе
     setToken(token);
     setUser(user);
@@ -68,6 +110,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshUserProfile = async () => {
+    const currentToken = localStorage.getItem('token');
+
+    // Проверяем, не истек ли токен перед обновлением профиля
+    if (!isTokenValid(currentToken)) {
+      logout();
+      return;
+    }
+
     try {
       // Получаем информацию о пользователе из токена
       const userProfile = await profileService.getMyProfile();
@@ -118,10 +168,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkAuthStatus = () => {
     const token = localStorage.getItem('token');
-    return !!token;
+    return isTokenValid(token);
   };
 
-  const isAuthenticated = !!token;
+  const isAuthenticated = !!token && isTokenValid(token);
 
   return (
     <AuthContext.Provider value={{ token, user, login, logout, isAuthenticated, checkAuthStatus, refreshUserProfile }}>
