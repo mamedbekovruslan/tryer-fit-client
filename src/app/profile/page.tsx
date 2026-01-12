@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 
 export default function ProfilePage() {
   const { user, refreshUserProfile } = useAuth();
@@ -23,30 +23,30 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <ProtectedRoute>
+      <UserTypeProtectedRoute allowedUserTypes={['client']}>
         <Container size="md" py="xl">
           <Paper shadow="md" p="xl" radius="md">
             <Text ta="center">Загрузка профиля...</Text>
           </Paper>
         </Container>
-      </ProtectedRoute>
+      </UserTypeProtectedRoute>
     );
   }
 
   if (!user) {
     return (
-      <ProtectedRoute>
+      <UserTypeProtectedRoute allowedUserTypes={['client']}>
         <Container size="md" py="xl">
           <Paper shadow="md" p="xl" radius="md">
             <Text ta="center">Не удалось загрузить данные профиля</Text>
           </Paper>
         </Container>
-      </ProtectedRoute>
+      </UserTypeProtectedRoute>
     );
   }
 
   return (
-    <ProtectedRoute>
+    <UserTypeProtectedRoute allowedUserTypes={['client']}>
       <Container size="lg" py="xl">
         <Paper shadow="md" p="xl" radius="md">
           <Title order={1} ta="center" mb="xl">Профиль пользователя</Title>
@@ -183,6 +183,6 @@ export default function ProfilePage() {
           </SimpleGrid>
         </Paper>
       </Container>
-    </ProtectedRoute>
+    </UserTypeProtectedRoute>
   );
 }

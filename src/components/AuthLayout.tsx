@@ -13,8 +13,13 @@ interface AuthLayoutProps {
 // Список защищенных маршрутов
 const protectedRoutes = ['/home', '/profile'];
 
+// Маршруты с ограничением по типу пользователя
+const userTypeRestrictedRoutes: { [key: string]: string[] } = {
+  '/profile': ['client'] // Только клиенты могут получить доступ к профилю
+};
+
 export const AuthLayout = ({ children }: AuthLayoutProps) => {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const pathname = usePathname();
 
   // Определяем, является ли текущий маршрут защищенным
@@ -22,10 +27,19 @@ export const AuthLayout = ({ children }: AuthLayoutProps) => {
     return protectedRoutes.some(route => pathname.startsWith(route));
   }, [pathname]);
 
-  // Определяем, нужно ли отображать AppLayout
-  const shouldRenderLayout = isProtectedRoute && isAuthenticated;
+  // Проверяем, соответствует ли тип пользователя требованиям маршрута
+  const isUserTypeAllowed = useMemo(() => {
+    const requiredUserTypes = userTypeRestrictedRoutes[pathname];
+    if (requiredUserTypes && user) {
+      return requiredUserTypes.includes(user.user_type);
+    }
+    return true; // Если нет ограничений по типу, разрешаем доступ
+  }, [pathname, user]);
 
-  // Если маршрут защищенный и пользователь аутентифицирован, отображаем AppLayout
+  // Определяем, нужно ли отображать AppLayout
+  const shouldRenderLayout = isProtectedRoute && isAuthenticated && isUserTypeAllowed;
+
+  // Если маршрут защищенный, пользователь аутентифицирован и имеет разрешенный тип, отображаем AppLayout
   if (shouldRenderLayout) {
     return (
       <AppShell
