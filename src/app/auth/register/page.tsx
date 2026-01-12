@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Title, Container, Paper, Group, Button } from '@mantine/core';
 import LoginForm from '@/features/auth/login/ui/LoginForm';
 import { default as RegisterForm } from '@/features/auth/ui/RegisterForm/RegisterForm';
-import ThemeToggle from '@/shared/ui/ThemeToggle';
 
 export default function RegisterPage() {
   const [isLoginView, setIsLoginView] = useState(false);

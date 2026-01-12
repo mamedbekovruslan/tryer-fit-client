@@ -4,9 +4,7 @@ import "./styles/globals.css";
 import "@mantine/core/styles.css";
 import "@mantine/dropzone/styles.css";
 import "@mantine/dates/styles.css";
-import { ThemeProvider } from "@/providers/ThemeProvider";
-import { AuthProvider } from '@/providers/AuthProvider';
-import { AuthLayout } from '@/components/AuthLayout';
+import { RootProviders } from '@/providers/RootProviders';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,11 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AuthProvider>
-          <ThemeProvider>
-            <AuthLayout>{children}</AuthLayout>
-          </ThemeProvider>
-        </AuthProvider>
+        <RootProviders>{children}</RootProviders>
       </body>
     </html>
   );

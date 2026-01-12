@@ -1,7 +1,7 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { ReactNode, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import { AppShell } from '@mantine/core';
 import { HeaderContent } from '@/components/Header/Header';
 import { useAuth } from '@/providers/AuthProvider';
@@ -14,44 +14,19 @@ interface AuthLayoutProps {
 const protectedRoutes = ['/home', '/profile'];
 
 export const AuthLayout = ({ children }: AuthLayoutProps) => {
-  const { isAuthenticated, checkAuthStatus } = useAuth();
-  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const pathname = usePathname();
 
-  const [shouldRenderLayout, setShouldRenderLayout] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Определяем, является ли текущий маршрут защищенным
+  const isProtectedRoute = useMemo(() => {
+    return protectedRoutes.some(route => pathname.startsWith(route));
+  }, [pathname]);
 
-  useEffect(() => {
-    // Проверяем, является ли текущий маршрут защищенным
-    const isProtectedRoute = protectedRoutes.some(route =>
-      pathname.startsWith(route)
-    );
-
-    // Проверяем статус аутентификации
-    const authenticated = checkAuthStatus();
-
-    if (isProtectedRoute) {
-      if (authenticated) {
-        setShouldRenderLayout(true);
-      } else {
-        // Если пользователь на защищенном маршруте, но не аутентифицирован, перенаправляем на страницу входа
-        router.push('/auth');
-      }
-    } else {
-      // Для незащищенных маршрутов (например, /auth) не отображаем AppLayout
-      setShouldRenderLayout(false);
-    }
-
-    setLoading(false);
-  }, [checkAuthStatus, router, pathname]);
-
-  // Если идет загрузка, можно показать лоадер
-  if (loading) {
-    return <>{children}</>;
-  }
+  // Определяем, нужно ли отображать AppLayout
+  const shouldRenderLayout = isProtectedRoute && isAuthenticated;
 
   // Если маршрут защищенный и пользователь аутентифицирован, отображаем AppLayout
-  if (shouldRenderLayout && isAuthenticated) {
+  if (shouldRenderLayout) {
     return (
       <AppShell
         header={{ height: 60 }}
