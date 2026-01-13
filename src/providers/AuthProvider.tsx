@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { clientService, ClientResponse } from '@/services/clientService';
+import { trainerService } from '@/services/trainerService';
 import { AuthUser } from '@/services/authService';
 import { profileService, UserProfile } from '@/services/profileService';
 
@@ -148,15 +149,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem('user', JSON.stringify(authUser));
         }
       } else {
-        // Для тренеров используем базовую информацию
-        const authUser: AuthUser = {
-          id: userProfile.id,
-          email: userProfile.email,
-          username: userProfile.username,
-          user_type: userProfile.user_type,
-        };
-        setUser(authUser);
-        localStorage.setItem('user', JSON.stringify(authUser));
+        // Для тренеров получаем полную информацию о тренере
+        try {
+          const trainerProfile = await trainerService.getMyTrainerProfile();
+          const authUser: AuthUser = {
+            id: trainerProfile.id,
+            email: trainerProfile.email,
+            username: trainerProfile.username,
+            user_type: userProfile.user_type,
+          };
+          setUser(authUser);
+          localStorage.setItem('user', JSON.stringify(authUser));
+        } catch (trainerError) {
+          // Если не удалось получить информацию о тренере, используем базовую информацию
+          console.error('Could not fetch trainer profile:', trainerError);
+          const authUser: AuthUser = {
+            id: userProfile.id,
+            email: userProfile.email,
+            username: userProfile.username,
+            user_type: userProfile.user_type,
+          };
+          setUser(authUser);
+          localStorage.setItem('user', JSON.stringify(authUser));
+        }
       }
     } catch (error) {
       console.error('Failed to refresh user profile:', error);

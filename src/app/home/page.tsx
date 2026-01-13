@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Stack } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import TrainerInfoCard from '@/components/TrainerInfoCard';
 
 export default function HomePage() {
@@ -20,9 +20,9 @@ export default function HomePage() {
     }
   }, [user, refreshUserProfile]);
 
-  // Показываем защищенное содержимое только если пользователь аутентифицирован
+  // Показываем защищенное содержимое только если пользователь аутентифицирован и является клиентом
   return (
-    <ProtectedRoute>
+    <UserTypeProtectedRoute allowedUserTypes={['client']}>
       <Container size="md" py="xl">
         <Paper shadow="md" p="xl" radius="md">
           <Title order={1} ta="center" mb="xl">Добро пожаловать в Tryer Fit!</Title>
@@ -38,6 +38,6 @@ export default function HomePage() {
           </Stack>
         </Paper>
       </Container>
-    </ProtectedRoute>
+    </UserTypeProtectedRoute>
   );
 }

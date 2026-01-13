@@ -38,13 +38,16 @@ export const UserProfileDropdown = () => {
           <Text size="sm">{user.username}</Text>
         </Menu.Label>
 
-        <Menu.Item
-          leftSection={<FiUser size={16} />}
-          component={Link}
-          href="/profile"
-        >
-          Профиль
-        </Menu.Item>
+        {/* Показываем пункт "Профиль" только для клиентов */}
+        {user.user_type === 'client' && (
+          <Menu.Item
+            leftSection={<FiUser size={16} />}
+            component={Link}
+            href="/profile"
+          >
+            Профиль
+          </Menu.Item>
+        )}
 
         <Divider />
 

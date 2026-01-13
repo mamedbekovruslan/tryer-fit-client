@@ -3,7 +3,7 @@ import { authService } from '@/services/authService';
 import { useAuth } from '@/providers/AuthProvider';
 
 export interface LoginHandler {
-  handleLogin: (email: string, password: string, onSuccess?: () => void) => Promise<void>;
+  handleLogin: (email: string, password: string, onSuccess?: (user: any) => void) => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -13,7 +13,7 @@ export const useLogin = (): LoginHandler => {
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
 
-  const handleLogin = async (email: string, password: string, onSuccess?: () => void) => {
+  const handleLogin = async (email: string, password: string, onSuccess?: (user: any) => void) => {
     setLoading(true);
     setError(null);
 
@@ -23,9 +23,9 @@ export const useLogin = (): LoginHandler => {
       // Use the auth context to store the token and user data
       login(response.access_token, response.user);
 
-      // Call the success callback if provided
+      // Call the success callback if provided, passing the user data
       if (onSuccess) {
-        onSuccess();
+        onSuccess(response.user);
       }
     } catch (err: any) {
       console.error('Login error:', err);
