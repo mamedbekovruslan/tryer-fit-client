@@ -5,6 +5,8 @@ import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, 
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { trainerService, Trainer } from '@/services/trainerService';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 // Типы данных
 interface Client {
@@ -28,6 +30,7 @@ interface ChatMessage {
 
 export default function AdminPage() {
   const { user, refreshUserProfile } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [clientsInWork, setClientsInWork] = useState<Client[]>([]);
@@ -259,7 +262,11 @@ export default function AdminPage() {
                 {chatClients
                   .sort((a, b) => (b.is_favorite ? 1 : 0) - (a.is_favorite ? 1 : 0)) // Сортировка по звездочке
                   .map(client => (
-                    <div key={client.id} style={{ marginBottom: '10px', cursor: 'pointer' }}>
+                    <div
+                      key={client.id}
+                      style={{ marginBottom: '10px', cursor: 'pointer' }}
+                      onClick={() => router.push(`/chat?clientId=${client.id}`)}
+                    >
                       <Flex justify="space-between" align="center">
                         <Text fw={500}>
                           {client.first_name} {client.last_name} ({client.username})
