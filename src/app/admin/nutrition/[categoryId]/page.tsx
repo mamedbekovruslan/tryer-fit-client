@@ -10,19 +10,16 @@ import {
   Card, 
   Grid, 
   Button, 
-  Modal, 
-  TextInput,
   Flex,
   Badge,
   Group,
-  Accordion,
-  ActionIcon,
+  ScrollArea,
   Divider
 } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { useParams } from 'next/navigation';
-import { FiPlus, FiTrash, FiEdit } from 'react-icons/fi';
+import Link from 'next/link';
 
 // Типы данных
 interface NutritionCategory {
@@ -32,11 +29,17 @@ interface NutritionCategory {
   created_at: string;
 }
 
-interface NutritionRule {
+interface Meal {
   id: number;
+  name: string;
+  description: string;
+}
+
+interface NutritionDay {
+  id: number;
+  name: string;
   category_id: number;
-  title: string;
-  content: string;
+  meals: Meal[];
   created_at: string;
 }
 
@@ -44,11 +47,8 @@ export default function NutritionCategoryPage() {
   const { categoryId } = useParams();
   const { user } = useAuth();
   const [category, setCategory] = useState<NutritionCategory | null>(null);
-  const [rules, setRules] = useState<NutritionRule[]>([]);
-  const [opened, setOpened] = useState(false);
-  const [newRule, setNewRule] = useState({ title: '', content: '' });
-  const [editingRule, setEditingRule] = useState<NutritionRule | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [days, setDays] = useState<NutritionDay[]>([]);
+  const [selectedDay, setSelectedDay] = useState<NutritionDay | null>(null);
 
   // Моковые данные для демонстрации
   const mockCategories: NutritionCategory[] = [
@@ -78,27 +78,75 @@ export default function NutritionCategoryPage() {
     }
   ];
 
-  const mockRules: NutritionRule[] = [
+  const mockDays: NutritionDay[] = [
     {
       id: 1,
+      name: 'День 1',
       category_id: Number(categoryId),
-      title: 'Контроль калорийности',
-      content: 'Для похудения необходимо создать дефицит калорий. Рассчитайте свою норму и потребляйте на 300-500 ккал меньше.',
-      created_at: '2024-11-16'
+      meals: [
+        {
+          id: 1,
+          name: 'Завтрак',
+          description: 'Овсянка с ягодами и орехами'
+        },
+        {
+          id: 2,
+          name: 'Обед',
+          description: 'Куриная грудка с овощами и бурый рис'
+        },
+        {
+          id: 3,
+          name: 'Ужин',
+          description: 'Запеченная рыба с салатом'
+        }
+      ],
+      created_at: '2024-12-01'
     },
     {
       id: 2,
+      name: 'День 2',
       category_id: Number(categoryId),
-      title: 'Белки',
-      content: 'Потребляйте 1.6-2.2 г белка на кг веса тела для сохранения мышечной массы во время похудения.',
-      created_at: '2024-11-17'
+      meals: [
+        {
+          id: 1,
+          name: 'Завтрак',
+          description: 'Творог с медом и фруктами'
+        },
+        {
+          id: 2,
+          name: 'Обед',
+          description: 'Говядина с картофелем и овощами'
+        },
+        {
+          id: 3,
+          name: 'Ужин',
+          description: 'Овощное рагу с яйцом'
+        }
+      ],
+      created_at: '2024-12-02'
     },
     {
       id: 3,
+      name: 'День 3',
       category_id: Number(categoryId),
-      title: 'Углеводы',
-      content: 'Предпочитайте сложные углеводы: овсянка, бурый рис, овощи. Исключите простые сахара.',
-      created_at: '2024-11-18'
+      meals: [
+        {
+          id: 1,
+          name: 'Завтрак',
+          description: 'Яичница с авокадо и цельнозерновым хлебом'
+        },
+        {
+          id: 2,
+          name: 'Обед',
+          description: 'Лосось с киноа и брокколи'
+        },
+        {
+          id: 3,
+          name: 'Ужин',
+          description: 'Творожная запеканка с ягодами'
+        }
+      ],
+      created_at: '2024-12-03'
     }
   ];
 
@@ -107,63 +155,19 @@ export default function NutritionCategoryPage() {
     const loadCategoryData = async () => {
       const foundCategory = mockCategories.find(cat => cat.id === Number(categoryId));
       setCategory(foundCategory || null);
-      setRules(mockRules);
+      setDays(mockDays);
+      
+      // Устанавливаем первый день как выбранный по умолчанию
+      if (mockDays.length > 0) {
+        setSelectedDay(mockDays[0]);
+      }
     };
 
     loadCategoryData();
   }, [categoryId]);
 
-  const handleAddRule = () => {
-    if (newRule.title.trim() && newRule.content.trim()) {
-      setCreating(true);
-      
-      // Имитация API запроса
-      setTimeout(() => {
-        const newRuleObj: NutritionRule = {
-          id: rules.length + 1,
-          category_id: Number(categoryId),
-          title: newRule.title.trim(),
-          content: newRule.content.trim(),
-          created_at: new Date().toISOString().split('T')[0]
-        };
-        
-        setRules([...rules, newRuleObj]);
-        setNewRule({ title: '', content: '' });
-        setCreating(false);
-        setOpened(false);
-      }, 500);
-    }
-  };
-
-  const handleUpdateRule = () => {
-    if (editingRule && editingRule.title.trim() && editingRule.content.trim()) {
-      setCreating(true);
-      
-      // Имитация API запроса
-      setTimeout(() => {
-        const updatedRules = rules.map(rule => 
-          rule.id === editingRule.id ? editingRule : rule
-        );
-        
-        setRules(updatedRules);
-        setEditingRule(null);
-        setCreating(false);
-        setOpened(false);
-      }, 500);
-    }
-  };
-
-  const handleDeleteRule = (ruleId: number) => {
-    // Имитация API запроса
-    setTimeout(() => {
-      const updatedRules = rules.filter(rule => rule.id !== ruleId);
-      setRules(updatedRules);
-    }, 300);
-  };
-
-  const startEditingRule = (rule: NutritionRule) => {
-    setEditingRule(rule);
-    setOpened(true);
+  const handleDayClick = (day: NutritionDay) => {
+    setSelectedDay(day);
   };
 
   if (!user) {
@@ -201,137 +205,85 @@ export default function NutritionCategoryPage() {
                 <Text c="dimmed" mt="xs">{category.description}</Text>
               )}
             </div>
-            <Button
-              onClick={() => {
-                setEditingRule(null);
-                setNewRule({ title: '', content: '' });
-                setOpened(true);
-              }}
-              leftSection={<FiPlus size={16} />}
-              size="lg"
-            >
-              Добавить правило
-            </Button>
+            <Link href={`/admin/nutrition/${categoryId}/create`} passHref legacyBehavior>
+              <Button size="lg">
+                Добавить день
+              </Button>
+            </Link>
           </Flex>
 
-          {rules.length > 0 ? (
-            <Accordion chevronPosition="right" variant="contained">
-              {rules.map(rule => (
-                <Accordion.Item key={rule.id} value={rule.title}>
-                  <Accordion.Control>
-                    <Flex justify="space-between" align="center">
-                      <Text fw={500}>{rule.title}</Text>
-                      <Group>
-                        <ActionIcon
-                          variant="subtle"
-                          color="blue"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startEditingRule(rule);
-                          }}
-                        >
-                          <FiEdit size={16} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          color="red"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteRule(rule.id);
-                          }}
-                        >
-                          <FiTrash size={16} />
-                        </ActionIcon>
-                      </Group>
+          <Grid gutter="xl">
+            {/* Левая колонка - список дней */}
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Card shadow="sm" padding="lg" radius="md" withBorder>
+                <Title order={3} mb="md">Дни питания</Title>
+                
+                <ScrollArea h={400} offsetScrollbars>
+                  <Stack gap="sm">
+                    {days.map(day => (
+                      <Card 
+                        key={day.id}
+                        shadow="xs" 
+                        padding="md" 
+                        radius="sm" 
+                        withBorder
+                        style={{ 
+                          cursor: 'pointer',
+                          backgroundColor: selectedDay?.id === day.id ? '#f0f7ff' : 'inherit'
+                        }}
+                        onClick={() => handleDayClick(day)}
+                      >
+                        <Flex justify="space-between" align="center">
+                          <Text fw={500}>{day.name}</Text>
+                          <Badge variant="light">{day.meals.length} приемов</Badge>
+                        </Flex>
+                        <Text size="sm" c="dimmed" mt="xs">
+                          Создан: {day.created_at}
+                        </Text>
+                      </Card>
+                    ))}
+                  </Stack>
+                </ScrollArea>
+                
+                {days.length === 0 && (
+                  <Text c="dimmed" ta="center" mt="lg">
+                    Дни питания отсутствуют
+                  </Text>
+                )}
+              </Card>
+            </Grid.Col>
+            
+            {/* Правая колонка - детали выбранного дня */}
+            <Grid.Col span={{ base: 12, md: 8 }}>
+              <Card shadow="sm" padding="lg" radius="md" withBorder>
+                {selectedDay ? (
+                  <>
+                    <Flex justify="space-between" align="center" mb="md">
+                      <Title order={2}>{selectedDay.name}</Title>
+                      <Badge variant="outline">Создан: {selectedDay.created_at}</Badge>
                     </Flex>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Text>{rule.content}</Text>
-                    <Divider mt="sm" />
-                    <Text size="xs" c="dimmed" ta="right" mt="sm">
-                      Добавлено: {rule.created_at}
-                    </Text>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              ))}
-            </Accordion>
-          ) : (
-            <Paper p="xl" radius="md" withBorder ta="center">
-              <Text size="lg">Правила питания отсутствуют</Text>
-              <Text c="dimmed" mt="sm">Нажмите "Добавить правило", чтобы создать первое правило</Text>
-            </Paper>
-          )}
+                    
+                    <Divider mb="md" />
+                    
+                    <Stack gap="md">
+                      {selectedDay.meals.map(meal => (
+                        <Card key={meal.id} shadow="none" padding="md" radius="sm" withBorder>
+                          <Title order={4}>{meal.name}</Title>
+                          <Text mt="sm">{meal.description}</Text>
+                        </Card>
+                      ))}
+                    </Stack>
+                  </>
+                ) : (
+                  <Text c="dimmed" ta="center">
+                    Выберите день из списка для просмотра деталей
+                  </Text>
+                )}
+              </Card>
+            </Grid.Col>
+          </Grid>
         </Paper>
       </Container>
-
-      {/* Модальное окно для добавления/редактирования правила */}
-      <Modal
-        opened={opened}
-        onClose={() => {
-          setOpened(false);
-          setNewRule({ title: '', content: '' });
-          setEditingRule(null);
-        }}
-        title={editingRule ? "Редактировать правило" : "Добавить новое правило"}
-        size="lg"
-        centered
-      >
-        <Stack>
-          <TextInput
-            label="Заголовок правила"
-            placeholder="Введите заголовок правила"
-            value={editingRule ? editingRule.title : newRule.title}
-            onChange={(event) => {
-              if (editingRule) {
-                setEditingRule({ ...editingRule, title: event.currentTarget.value });
-              } else {
-                setNewRule({ ...newRule, title: event.currentTarget.value });
-              }
-            }}
-            required
-          />
-          
-          <TextInput
-            label="Содержание правила"
-            placeholder="Введите подробное описание правила питания"
-            value={editingRule ? editingRule.content : newRule.content}
-            onChange={(event) => {
-              if (editingRule) {
-                setEditingRule({ ...editingRule, content: event.currentTarget.value });
-              } else {
-                setNewRule({ ...newRule, content: event.currentTarget.value });
-              }
-            }}
-            multiline
-            rows={4}
-            required
-          />
-          
-          <Group justify="right" mt="md">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setOpened(false);
-                setNewRule({ title: '', content: '' });
-                setEditingRule(null);
-              }}
-            >
-              Отмена
-            </Button>
-            <Button 
-              onClick={editingRule ? handleUpdateRule : handleAddRule} 
-              loading={creating}
-              disabled={
-                !(editingRule 
-                  ? editingRule.title.trim() && editingRule.content.trim()
-                  : newRule.title.trim() && newRule.content.trim())
-              }
-            >
-              {editingRule ? "Сохранить изменения" : "Создать правило"}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
     </UserTypeProtectedRoute>
   );
 }
