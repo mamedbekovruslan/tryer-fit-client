@@ -229,7 +229,11 @@ export default function AdminPage() {
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Title order={3} mb="md">Клиенты в работе</Title>
                   {clientsInWork.map(client => (
-                    <div key={client.id} style={{ marginBottom: '10px', cursor: 'pointer' }}>
+                    <div
+                      key={client.id}
+                      style={{ marginBottom: '10px', cursor: 'pointer' }}
+                      onClick={() => router.push(`/admin/client/${client.id}`)}
+                    >
                       <Flex justify="space-between" align="center">
                         <Text fw={500}>
                           {client.first_name} {client.last_name} ({client.username})
@@ -244,7 +248,11 @@ export default function AdminPage() {
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Title order={3} mb="md">Новые клиенты</Title>
                   {newClients.map(client => (
-                    <div key={client.id} style={{ marginBottom: '10px', cursor: 'pointer' }}>
+                    <div
+                      key={client.id}
+                      style={{ marginBottom: '10px', cursor: 'pointer' }}
+                      onClick={() => router.push(`/admin/client/${client.id}`)}
+                    >
                       <Flex justify="space-between" align="center">
                         <Text fw={500}>
                           {client.first_name} {client.last_name} ({client.username})
