@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppShell, Text, Burger, useMantineTheme, Container } from '@mantine/core';
+import { AppShell, Text, Burger, useMantineTheme, Container, NavLink } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useAuth } from '@/providers/AuthProvider';
+import Link from 'next/link';
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -35,13 +36,15 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     );
   }
 
+  const { user } = useAuth();
+
   return (
     <AppShell
       header={{ height: 60 }}
-      navbar={{ 
-        width: 300, 
-        breakpoint: 'sm', 
-        collapsed: { mobile: !opened } 
+      navbar={{
+        width: 300,
+        breakpoint: 'sm',
+        collapsed: { mobile: !opened }
       }}
       padding="md"
     >
@@ -57,8 +60,28 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       </AppShell.Header>
 
       <AppShell.Navbar p="md">
-        <Text>Навигация</Text>
-        {/* Add navigation items here */}
+        <Text fw={500} mb="sm">Навигация</Text>
+
+        {/* Для тренеров показываем дополнительные пункты */}
+        {user?.user_type === 'trainer' && (
+          <>
+            <Link href="/admin" passHref legacyBehavior>
+              <NavLink component="a" label="Панель тренера" />
+            </Link>
+          </>
+        )}
+
+        {/* Для клиентов показываем их пункты */}
+        {user?.user_type === 'client' && (
+          <>
+            <Link href="/home" passHref legacyBehavior>
+              <NavLink component="a" label="Главная" />
+            </Link>
+            <Link href="/profile" passHref legacyBehavior>
+              <NavLink component="a" label="Профиль" />
+            </Link>
+          </>
+        )}
       </AppShell.Navbar>
 
       <AppShell.Main>
