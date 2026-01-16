@@ -5,6 +5,7 @@ import { Container, Title, Paper, Stack, Text, TextInput, Button, Group, Avatar,
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Client } from '@/services/clientService';
 
 // Типы данных для сообщений
 interface Message {
@@ -14,15 +15,6 @@ interface Message {
   message: string;
   timestamp: string;
   is_read: boolean;
-}
-
-// Тип данных для клиента
-interface Client {
-  id: number;
-  username: string;
-  email: string;
-  first_name?: string;
-  last_name?: string;
 }
 
 export default function ChatPage() {

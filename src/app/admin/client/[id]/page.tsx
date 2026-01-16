@@ -313,6 +313,12 @@ export default function ClientProfilePage() {
                       Добавить план питания
                     </Button>
                   </Link>
+
+                  <Link href={`/admin/client/${client.id}/nutrition`} passHref>
+                    <Button variant="subtle" fullWidth mt="sm">
+                      Просмотреть планы питания
+                    </Button>
+                  </Link>
                 </Stack>
               </Card>
             </Grid.Col>

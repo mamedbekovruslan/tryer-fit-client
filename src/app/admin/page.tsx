@@ -5,18 +5,13 @@ import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, 
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { trainerService, Trainer } from '@/services/trainerService';
+import { Client } from '@/services/clientService';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // Типы данных
-interface Client {
-  id: number;
-  username: string;
-  email: string;
-  first_name?: string;
-  last_name?: string;
+interface ExtendedClient extends Client {
   is_favorite: boolean; // поле "звездочка"
-  // другие поля клиента
 }
 
 interface ChatMessage {
@@ -33,26 +28,26 @@ export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [trainer, setTrainer] = useState<Trainer | null>(null);
-  const [clientsInWork, setClientsInWork] = useState<Client[]>([]);
-  const [newClients, setNewClients] = useState<Client[]>([]);
-  const [chatClients, setChatClients] = useState<Client[]>([]);
+  const [clientsInWork, setClientsInWork] = useState<ExtendedClient[]>([]);
+  const [newClients, setNewClients] = useState<ExtendedClient[]>([]);
+  const [chatClients, setChatClients] = useState<ExtendedClient[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<{[key: number]: number}>({});
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [opened, setOpened] = useState(false);
 
   // Моковые данные для демонстрации
-  const mockClientsInWork: Client[] = [
+  const mockClientsInWork: ExtendedClient[] = [
     { id: 1, username: 'client1', email: 'client1@example.com', first_name: 'Иван', last_name: 'Иванов', is_favorite: true },
     { id: 2, username: 'client2', email: 'client2@example.com', first_name: 'Мария', last_name: 'Петрова', is_favorite: false },
   ];
 
-  const mockNewClients: Client[] = [
+  const mockNewClients: ExtendedClient[] = [
     { id: 3, username: 'newclient1', email: 'newclient1@example.com', first_name: 'Алексей', last_name: 'Сидоров', is_favorite: false },
     { id: 4, username: 'newclient2', email: 'newclient2@example.com', first_name: 'Елена', last_name: 'Козлова', is_favorite: true },
   ];
 
-  const mockChatClients: Client[] = [
+  const mockChatClients: ExtendedClient[] = [
     { id: 1, username: 'client1', email: 'client1@example.com', first_name: 'Иван', last_name: 'Иванов', is_favorite: true },
     { id: 3, username: 'newclient1', email: 'newclient1@example.com', first_name: 'Алексей', last_name: 'Сидоров', is_favorite: false },
   ];

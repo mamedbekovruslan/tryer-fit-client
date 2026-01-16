@@ -1,64 +1,117 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Container, 
-  Title, 
-  Text, 
-  Paper, 
-  Stack, 
-  Card, 
-  Grid, 
-  Button, 
+import {
+  Container,
+  Title,
+  Text,
+  Paper,
+  Stack,
+  Card,
+  Grid,
+  Button,
   TextInput,
-  Select,
   Group,
-  Alert
+  Alert,
+  Accordion,
+  ActionIcon,
+  Flex,
 } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FiPlus, FiTrash } from 'react-icons/fi';
 
 // Типы данных
-interface NutritionSubcategory {
+interface Meal {
+  id: number;
+  name: string;
+  description: string;
+}
+
+interface NutritionDay {
   id: number;
   name: string;
   category_id: number;
+  meals: Meal[];
   created_at: string;
 }
 
-export default function CreateNutritionSubcategoryPage() {
+export default function CreateNutritionDayPage() {
   const { categoryId } = useParams();
   const { user } = useAuth();
   const router = useRouter();
   
-  const [subcategoryData, setSubcategoryData] = useState({
+  const [dayData, setDayData] = useState({
     name: '',
     description: ''
   });
+  
+  const [meals, setMeals] = useState<Meal[]>([
+    { id: 1, name: 'Завтрак', description: '' },
+    { id: 2, name: 'Обед', description: '' },
+    { id: 3, name: 'Ужин', description: '' }
+  ]);
+  
+  const [nextMealId, setNextMealId] = useState(4);
   
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   const handleInputChange = (field: string, value: any) => {
-    setSubcategoryData(prev => ({
+    setDayData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleMealChange = (mealId: number, field: keyof Meal, value: string) => {
+    setMeals(prev => 
+      prev.map(meal => 
+        meal.id === mealId ? { ...meal, [field]: value } : meal
+      )
+    );
+  };
+
+  const addMeal = () => {
+    const newMeal: Meal = {
+      id: nextMealId,
+      name: `Прием пищи ${nextMealId}`,
+      description: ''
+    };
+    
+    setMeals([...meals, newMeal]);
+    setNextMealId(nextMealId + 1);
+  };
+
+  const removeMeal = (mealId: number) => {
+    if (meals.length <= 1) {
+      setError('Должен быть хотя бы один прием пищи');
+      return;
+    }
+    
+    setMeals(meals.filter(meal => meal.id !== mealId));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Валидация
-    if (!subcategoryData.name.trim()) {
+    if (!dayData.name.trim()) {
       setError('Название дня обязательно');
       return;
     }
     
-    // Здесь будет вызов API для сохранения подкатегории
-    console.log('Сохраняем день питания:', subcategoryData);
+    // Проверяем, что все приемы пищи имеют названия и описания
+    const emptyMeals = meals.filter(meal => !meal.name.trim() || !meal.description.trim());
+    if (emptyMeals.length > 0) {
+      setError('Все приемы пищи должны иметь название и описание');
+      return;
+    }
+    
+    // Здесь будет вызов API для сохранения дня питания
+    console.log('Сохраняем день питания:', { ...dayData, meals });
     
     // Имитация успешного сохранения
     setSuccess(true);
@@ -107,27 +160,18 @@ export default function CreateNutritionSubcategoryPage() {
                   <Stack gap="md">
                     <Title order={3}>Основная информация</Title>
                     
-                    <Select
-                      label="День недели"
-                      placeholder="Выберите день недели"
-                      data={[
-                        { value: 'Понедельник', label: 'Понедельник' },
-                        { value: 'Вторник', label: 'Вторник' },
-                        { value: 'Среда', label: 'Среда' },
-                        { value: 'Четверг', label: 'Четверг' },
-                        { value: 'Пятница', label: 'Пятница' },
-                        { value: 'Суббота', label: 'Суббота' },
-                        { value: 'Воскресенье', label: 'Воскресенье' }
-                      ]}
-                      value={subcategoryData.name}
-                      onChange={(value) => handleInputChange('name', value)}
+                    <TextInput
+                      label="Название дня"
+                      placeholder="Например: День 1, День интенсивной тренировки"
+                      value={dayData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
                       required
                     />
                     
                     <TextInput
                       label="Описание (необязательно)"
                       placeholder="Краткое описание дня питания..."
-                      value={subcategoryData.description}
+                      value={dayData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
                     />
                   </Stack>
@@ -137,12 +181,60 @@ export default function CreateNutritionSubcategoryPage() {
               <Grid.Col span={{ base: 12, md: 6 }}>
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Stack gap="md">
-                    <Title order={3}>Информация</Title>
-                    <Text>
-                      После создания дня питания вы сможете добавить планы питания для этого дня.
-                      Каждый день может содержать несколько планов питания, которые будут включать
-                      завтрак, обед, ужин и перекусы.
-                    </Text>
+                    <Flex justify="space-between" align="center">
+                      <Title order={3}>Приемы пищи</Title>
+                      <Button 
+                        variant="outline" 
+                        size="compact-sm"
+                        leftSection={<FiPlus size={14} />}
+                        onClick={addMeal}
+                      >
+                        Добавить прием
+                      </Button>
+                    </Flex>
+                    
+                    <Accordion chevronPosition="right" variant="contained">
+                      {meals.map((meal, index) => (
+                        <Accordion.Item key={meal.id} value={`meal-${meal.id}`}>
+                          <Accordion.Control>
+                            <Flex justify="space-between" align="center" w="100%">
+                              <Text fw={500}>
+                                {meal.name || `Прием пищи ${index + 1}`}
+                              </Text>
+                              {meals.length > 1 && (
+                                <ActionIcon 
+                                  variant="subtle" 
+                                  color="red" 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    removeMeal(meal.id);
+                                  }}
+                                >
+                                  <FiTrash size={14} />
+                                </ActionIcon>
+                              )}
+                            </Flex>
+                          </Accordion.Control>
+                          <Accordion.Panel>
+                            <TextInput
+                              label="Название приема пищи"
+                              placeholder="Например: Завтрак, Обед, Полдник"
+                              value={meal.name}
+                              onChange={(e) => handleMealChange(meal.id, 'name', e.target.value)}
+                              required
+                            />
+                            <TextInput
+                              label="Описание"
+                              placeholder="Что нужно съесть в этом приеме пищи..."
+                              value={meal.description}
+                              onChange={(e) => handleMealChange(meal.id, 'description', e.target.value)}
+                              mt="sm"
+                              required
+                            />
+                          </Accordion.Panel>
+                        </Accordion.Item>
+                      ))}
+                    </Accordion>
                   </Stack>
                 </Card>
               </Grid.Col>

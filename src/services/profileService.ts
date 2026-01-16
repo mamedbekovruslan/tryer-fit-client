@@ -1,4 +1,5 @@
 import apiClient from '@/lib/api';
+import { Client } from './clientService';
 
 export interface UserProfile {
   id: number;
@@ -8,10 +9,7 @@ export interface UserProfile {
   trainer?: any;
 }
 
-export interface ClientWithTrainer {
-  id: number;
-  email: string;
-  username: string;
+export interface ClientWithTrainer extends Client {
   trainer?: any;
 }
 
