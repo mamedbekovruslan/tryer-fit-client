@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex } from '@mantine/core';
+import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Button } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user, refreshUserProfile } = useAuth();
@@ -119,6 +120,15 @@ export default function ProfilePage() {
                     <div>
                       <Text size="sm" c="dimmed">Опыт тренировок</Text>
                       <Text fw={500}>{user.training_experience || 'Не указан'}</Text>
+                    </div>
+
+                    <div>
+                      <Text size="sm" c="dimmed">Питание</Text>
+                      <Link href="/nutrition" passHref legacyBehavior>
+                        <Button variant="outline" fullWidth mt="sm">
+                          Перейти к плану питания
+                        </Button>
+                      </Link>
                     </div>
                   </>
                 )}
