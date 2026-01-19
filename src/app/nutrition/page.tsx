@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Box, Card, Button, Group, Select } from '@mantine/core';
+import { Container, Title, Text, Paper, Box, Card, Button, Group, Select, Loader } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { MdCalendarToday, MdCalendarViewWeek, MdCalendarViewMonth } from 'react-icons/md';
@@ -197,7 +197,7 @@ const monthlyNutritionData: NutritionItem[] = [
 ];
 
 export default function NutritionPage() {
-  const { user, refreshUserProfile } = useAuth();
+  const { user, refreshUserProfile, isAuthenticated, checkAuthStatus } = useAuth();
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'day' | 'week' | 'month'>('day');
 
@@ -213,27 +213,27 @@ export default function NutritionPage() {
     loadProfile();
   }, [user, refreshUserProfile]);
 
-  if (loading) {
+  // Показываем спиннер при проверке аутентификации
+  if (loading || (!isAuthenticated && checkAuthStatus())) {
     return (
-      <UserTypeProtectedRoute allowedUserTypes={['client']}>
-        <Container size="md" py="xl">
-          <Paper shadow="md" p="xl" radius="md">
-            <Text ta="center">Загрузка плана питания...</Text>
-          </Paper>
-        </Container>
-      </UserTypeProtectedRoute>
+      <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <Paper shadow="md" p="xl" radius="md" style={{ textAlign: 'center' }}>
+          <Loader />
+          <Text mt="md" ta="center">Проверка аутентификации...</Text>
+        </Paper>
+      </Container>
     );
   }
 
-  if (!user) {
+  // Проверяем, является ли пользователь клиентом
+  if (!user || user.user_type !== 'client') {
     return (
-      <UserTypeProtectedRoute allowedUserTypes={['client']}>
-        <Container size="md" py="xl">
-          <Paper shadow="md" p="xl" radius="md">
-            <Text ta="center">Не удалось загрузить данные плана питания</Text>
-          </Paper>
-        </Container>
-      </UserTypeProtectedRoute>
+      <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <Paper shadow="md" p="xl" radius="md" style={{ textAlign: 'center' }}>
+          <Loader />
+          <Text mt="md" ta="center">Проверка доступа...</Text>
+        </Paper>
+      </Container>
     );
   }
 
@@ -255,87 +255,85 @@ export default function NutritionPage() {
   const filteredData = getFilteredData();
 
   return (
-    <UserTypeProtectedRoute allowedUserTypes={['client']}>
-      <Container size="lg" py="xl">
-        <Paper shadow="md" p="xl" radius="md">
-          <Box p="md">
-            <Title order={2} mb="lg">План питания</Title>
+    <Container size="lg" py="xl">
+      <Paper shadow="md" p="xl" radius="md">
+        <Box p="md">
+          <Title order={2} mb="lg">План питания</Title>
 
-            <Group mb="lg">
-              <Select
-                label="Период"
-                placeholder="Выберите период"
-                value={filter}
-                onChange={(value) => value && setFilter(value as 'day' | 'week' | 'month')}
-                data={[
-                  { value: 'day', label: 'День' },
-                  { value: 'week', label: 'Неделя' },
-                  { value: 'month', label: 'Месяц' }
-                ]}
-                w={200}
-              />
+          <Group mb="lg">
+            <Select
+              label="Период"
+              placeholder="Выберите период"
+              value={filter}
+              onChange={(value) => value && setFilter(value as 'day' | 'week' | 'month')}
+              data={[
+                { value: 'day', label: 'День' },
+                { value: 'week', label: 'Неделя' },
+                { value: 'month', label: 'Месяц' }
+              ]}
+              w={200}
+            />
 
-              <Button
-                leftSection={
-                  filter === 'day' ? <MdCalendarToday size={16} /> :
-                  filter === 'week' ? <MdCalendarViewWeek size={16} /> :
-                  <MdCalendarViewMonth size={16} />
-                }
-                variant={filter === 'day' ? 'filled' : 'light'}
-                onClick={() => setFilter('day')}
-                disabled={filter === 'day'}
-              >
-                На день
-              </Button>
+            <Button
+              leftSection={
+                filter === 'day' ? <MdCalendarToday size={16} /> :
+                filter === 'week' ? <MdCalendarViewWeek size={16} /> :
+                <MdCalendarViewMonth size={16} />
+              }
+              variant={filter === 'day' ? 'filled' : 'light'}
+              onClick={() => setFilter('day')}
+              disabled={filter === 'day'}
+            >
+              На день
+            </Button>
 
-              <Button
-                leftSection={
-                  filter === 'week' ? <MdCalendarViewWeek size={16} /> :
-                  filter === 'day' ? <MdCalendarToday size={16} /> :
-                  <MdCalendarViewMonth size={16} />
-                }
-                variant={filter === 'week' ? 'filled' : 'light'}
-                onClick={() => setFilter('week')}
-                disabled={filter === 'week'}
-              >
-                На неделю
-              </Button>
+            <Button
+              leftSection={
+                filter === 'week' ? <MdCalendarViewWeek size={16} /> :
+                filter === 'day' ? <MdCalendarToday size={16} /> :
+                <MdCalendarViewMonth size={16} />
+              }
+              variant={filter === 'week' ? 'filled' : 'light'}
+              onClick={() => setFilter('week')}
+              disabled={filter === 'week'}
+            >
+              На неделю
+            </Button>
 
-              <Button
-                leftSection={
-                  filter === 'month' ? <MdCalendarViewMonth size={16} /> :
-                  filter === 'day' ? <MdCalendarToday size={16} /> :
-                  <MdCalendarViewWeek size={16} />
-                }
-                variant={filter === 'month' ? 'filled' : 'light'}
-                onClick={() => setFilter('month')}
-                disabled={filter === 'month'}
-              >
-                На месяц
-              </Button>
-            </Group>
+            <Button
+              leftSection={
+                filter === 'month' ? <MdCalendarViewMonth size={16} /> :
+                filter === 'day' ? <MdCalendarToday size={16} /> :
+                <MdCalendarViewWeek size={16} />
+              }
+              variant={filter === 'month' ? 'filled' : 'light'}
+              onClick={() => setFilter('month')}
+              disabled={filter === 'month'}
+            >
+              На месяц
+            </Button>
+          </Group>
 
-            <Text mb="md">Ваш план питания на {filter === 'day' ? 'день' : filter === 'week' ? 'неделю' : 'месяц'}:</Text>
+          <Text mb="md">Ваш план питания на {filter === 'day' ? 'день' : filter === 'week' ? 'неделю' : 'месяц'}:</Text>
 
-            {filteredData.map((item) => (
-              <Card key={item.id} shadow="sm" padding="lg" radius="md" withBorder mb="md">
-                <Group justify="space-between" mb="xs">
-                  <Text fw={500}>{item.title} - {item.mealTime}</Text>
-                  <Text c="dimmed" size="sm">{item.calories} ккал</Text>
-                </Group>
+          {filteredData.map((item) => (
+            <Card key={item.id} shadow="sm" padding="lg" radius="md" withBorder mb="md">
+              <Group justify="space-between" mb="xs">
+                <Text fw={500}>{item.title} - {item.mealTime}</Text>
+                <Text c="dimmed" size="sm">{item.calories} ккал</Text>
+              </Group>
 
-                <Text size="sm" mb="sm">{item.description}</Text>
+              <Text size="sm" mb="sm">{item.description}</Text>
 
-                <Group>
-                  <Text size="xs">Белки: {item.protein}г</Text>
-                  <Text size="xs">Углеводы: {item.carbs}г</Text>
-                  <Text size="xs">Жиры: {item.fat}г</Text>
-                </Group>
-              </Card>
-            ))}
-          </Box>
-        </Paper>
-      </Container>
-    </UserTypeProtectedRoute>
+              <Group>
+                <Text size="xs">Белки: {item.protein}г</Text>
+                <Text size="xs">Углеводы: {item.carbs}г</Text>
+                <Text size="xs">Жиры: {item.fat}г</Text>
+              </Group>
+            </Card>
+          ))}
+        </Box>
+      </Paper>
+    </Container>
   );
 }
