@@ -8,7 +8,7 @@ export default function NewReportPage() {
 
   useEffect(() => {
     // Перенаправляем на новую страницу добавления прогресса
-    router.push('/me/progress/new-report');
+    router.replace('/me/progress/new-report');
   }, [router]);
 
   return null;

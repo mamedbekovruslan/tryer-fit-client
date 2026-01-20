@@ -5,6 +5,7 @@ import { Container, Title, Text, Paper, Box, Card, Button, Group, Select, Checkb
 import { DatePicker } from '@mantine/dates';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/providers/AuthProvider';
+import { useRouter } from 'next/navigation';
 
 // Типы данных
 interface ProgressDataPoint {
@@ -54,6 +55,7 @@ const mockComments: Comment[] = [
 
 export default function ProgressPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [timeRange, setTimeRange] = useState<'month' | 'year' | 'custom'>('month');
   const [customDateRange, setCustomDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [displayOptions, setDisplayOptions] = useState({
@@ -194,10 +196,10 @@ export default function ProgressPage() {
         )}
 
         <Group mt="xl">
-          <Button component="a" href="/progress/new-report" variant="outline">
+          <Button onClick={() => router.push('/me/progress/new-report')} variant="outline">
             Добавить прогресс
           </Button>
-          <Button component="a" href="/me/progress/reports" variant="outline">
+          <Button onClick={() => router.push('/me/progress/reports')} variant="outline">
             Все отчеты
           </Button>
         </Group>
