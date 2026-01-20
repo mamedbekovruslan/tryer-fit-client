@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Box, Card, Button, Group, Select, Loader } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
-import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { MdCalendarToday, MdCalendarViewWeek, MdCalendarViewMonth } from 'react-icons/md';
 
 interface NutritionItem {
@@ -197,43 +196,8 @@ const monthlyNutritionData: NutritionItem[] = [
 ];
 
 export default function NutritionPage() {
-  const { user, refreshUserProfile, isAuthenticated, checkAuthStatus } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const [filter, setFilter] = useState<'day' | 'week' | 'month'>('day');
-
-  useEffect(() => {
-    // Refresh user profile when the page loads
-    const loadProfile = async () => {
-      if (!user) {
-        await refreshUserProfile();
-      }
-      setLoading(false);
-    };
-
-    loadProfile();
-  }, [user, refreshUserProfile]);
-
-  // Показываем спиннер при проверке аутентификации
-  if (loading || (!isAuthenticated && checkAuthStatus())) {
-    return (
-      <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <Paper shadow="md" p="xl" radius="md" style={{ textAlign: 'center' }}>
-          <Loader />
-        </Paper>
-      </Container>
-    );
-  }
-
-  // Проверяем, является ли пользователь клиентом
-  if (!user || user.user_type !== 'client') {
-    return (
-      <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <Paper shadow="md" p="xl" radius="md" style={{ textAlign: 'center' }}>
-          <Loader />
-        </Paper>
-      </Container>
-    );
-  }
 
   const getFilteredData = () => {
     // В реальном приложении здесь будет логика фильтрации по выбранному периоду

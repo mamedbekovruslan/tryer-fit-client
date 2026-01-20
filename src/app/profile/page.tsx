@@ -122,14 +122,6 @@ export default function ProfilePage() {
                       <Text fw={500}>{user.training_experience || 'Не указан'}</Text>
                     </div>
 
-                    <div>
-                      <Text size="sm" c="dimmed">Питание</Text>
-                      <Link href="/nutrition" passHref legacyBehavior>
-                        <Button variant="outline" fullWidth mt="sm">
-                          Перейти к плану питания
-                        </Button>
-                      </Link>
-                    </div>
                   </>
                 )}
               </Stack>

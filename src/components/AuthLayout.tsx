@@ -11,13 +11,15 @@ interface AuthLayoutProps {
 }
 
 // Список защищенных маршрутов
-const protectedRoutes = ['/home', '/profile', '/admin', '/chat', '/nutrition'];
+const protectedRoutes = ['/home', '/profile', '/admin', '/chat', '/nutrition', '/progress'];
 
 // Маршруты с ограничением по типу пользователя
 const userTypeRestrictedRoutes: { [key: string]: string[] } = {
   '/profile': ['client'],    // Только клиенты могут получить доступ к профилю
   '/admin': ['trainer'],     // Только тренеры могут получить доступ к админке
-  '/chat': ['trainer']       // Только тренеры могут получить доступ к чату
+  '/chat': ['trainer'],      // Только тренеры могут получить доступ к чату
+  '/progress': ['client'],   // Только клиенты могут получить доступ к прогрессу
+  '/nutrition': ['client']   // Только клиенты могут получить доступ к питанию
 };
 
 export const AuthLayout = ({ children }: AuthLayoutProps) => {
