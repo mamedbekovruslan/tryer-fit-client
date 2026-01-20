@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
+import { Loader, Center, Container } from '@mantine/core';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -60,7 +61,13 @@ export default function ProtectedRoute({ children, fallback }: ProtectedRoutePro
 
   // Если идет проверка аутентификации, можно показать лоадер
   if (loading) {
-    return <div>Проверка аутентификации...</div>;
+    return (
+      <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <Center>
+          <Loader />
+        </Center>
+      </Container>
+    );
   }
 
   // Если пользователь аутентифицирован, отображаем защищенные дети

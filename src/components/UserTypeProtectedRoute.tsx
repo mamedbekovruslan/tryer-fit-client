@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
+import { Loader, Center, Container } from '@mantine/core';
 
 interface UserTypeProtectedRouteProps {
   children: React.ReactNode;
@@ -10,10 +11,10 @@ interface UserTypeProtectedRouteProps {
   fallback?: React.ReactNode; // Компонент, который отображается при отсутствии доступа
 }
 
-export default function UserTypeProtectedRoute({ 
-  children, 
-  allowedUserTypes, 
-  fallback 
+export default function UserTypeProtectedRoute({
+  children,
+  allowedUserTypes,
+  fallback
 }: UserTypeProtectedRouteProps) {
   const { user, isAuthenticated, checkAuthStatus } = useAuth();
   const router = useRouter();
@@ -34,7 +35,13 @@ export default function UserTypeProtectedRoute({
 
   // Если идет проверка аутентификации, можно показать лоадер
   if (loading) {
-    return <div>Проверка доступа...</div>;
+    return (
+      <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <Center>
+          <Loader />
+        </Center>
+      </Container>
+    );
   }
 
   // Если пользователь аутентифицирован и имеет разрешенный тип, отображаем защищенные дети

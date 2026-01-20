@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppShell, Text, Burger, useMantineTheme, Container, NavLink } from '@mantine/core';
+import { AppShell, Text, Burger, useMantineTheme, Container, NavLink, Loader, Center } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useAuth } from '@/providers/AuthProvider';
 import Link from 'next/link';
@@ -31,7 +31,9 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   if (loading) {
     return (
       <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <Text>Загрузка...</Text>
+        <Center>
+          <Loader />
+        </Center>
       </Container>
     );
   }

@@ -219,7 +219,6 @@ export default function NutritionPage() {
       <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <Paper shadow="md" p="xl" radius="md" style={{ textAlign: 'center' }}>
           <Loader />
-          <Text mt="md" ta="center">Проверка аутентификации...</Text>
         </Paper>
       </Container>
     );
@@ -231,7 +230,6 @@ export default function NutritionPage() {
       <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <Paper shadow="md" p="xl" radius="md" style={{ textAlign: 'center' }}>
           <Loader />
-          <Text mt="md" ta="center">Проверка доступа...</Text>
         </Paper>
       </Container>
     );
