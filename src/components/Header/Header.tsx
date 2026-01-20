@@ -41,6 +41,11 @@ export const HeaderContent = () => {
 
       {/* Right side - User profile */}
       <Group>
+        {user?.user_type === 'client' && (
+          <Anchor component={Link} href="/trainer" fw={500} c="white">
+            Тренер
+          </Anchor>
+        )}
         <UserProfileDropdown />
       </Group>
     </Flex>
