@@ -6,9 +6,25 @@ import { DatePickerInput } from '@mantine/dates';
 import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { FaUpload, FaCamera, FaTimes } from 'react-icons/fa';
 import { useAuth } from '@/providers/AuthProvider';
+import { progressReportService } from '@/services/progressReportService';
 
-// Типы данных
-interface ProgressReport {
+// Используем типы из сервиса
+// interface ProgressReport {
+//   date: Date | null;
+//   weight: number | '';
+//   waist: number | '';
+//   hips: number | '';
+//   chest: number | '';
+//   arms: number | '';
+//   thighs: number | '';
+//   bodyFat: number | '';
+//   muscleMass: number | '';
+//   photos: File[];
+//   notes: string;
+// }
+
+// Тип для локального состояния формы
+interface LocalProgressReport {
   date: Date | null;
   weight: number | '';
   waist: number | '';
@@ -24,7 +40,7 @@ interface ProgressReport {
 
 export default function NewProgressReportPage() {
   const { user } = useAuth();
-  const [reportData, setReportData] = useState<ProgressReport>({
+  const [reportData, setReportData] = useState<LocalProgressReport>({
     date: new Date(),
     weight: '',
     waist: '',
@@ -110,14 +126,26 @@ export default function NewProgressReportPage() {
     setUploading(true);
 
     try {
-      // Здесь будет логика отправки данных на сервер
-      console.log('Отправка данных:', reportData);
+      // Подготовка данных для отправки
+      const progressReportData = {
+        date: reportData.date!.toISOString(), // Преобразуем дату в ISO строку для корректной передачи
+        weight: typeof reportData.weight === 'number' ? reportData.weight : undefined,
+        waist: typeof reportData.waist === 'number' ? reportData.waist : undefined,
+        hips: typeof reportData.hips === 'number' ? reportData.hips : undefined,
+        chest: typeof reportData.chest === 'number' ? reportData.chest : undefined,
+        arms: typeof reportData.arms === 'number' ? reportData.arms : undefined,
+        thighs: typeof reportData.thighs === 'number' ? reportData.thighs : undefined,
+        bodyFat: typeof reportData.bodyFat === 'number' ? reportData.bodyFat : undefined,
+        muscleMass: typeof reportData.muscleMass === 'number' ? reportData.muscleMass : undefined,
+        notes: reportData.notes,
+        photoUrls: [] as string[], // Пока пустой массив, позже добавим загрузку фото
+      };
 
-      // Имитация успешной отправки
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Отправка данных на сервер
+      await progressReportService.createProgressReport(progressReportData);
 
       setSuccess(true);
-      
+
       // Сброс формы после успешной отправки
       setReportData({
         date: new Date(),
@@ -134,6 +162,8 @@ export default function NewProgressReportPage() {
       });
     } catch (error) {
       console.error('Ошибка при отправке данных:', error);
+      // Обработка ошибки - можно добавить более подробную обработку
+      alert('Ошибка при сохранении отчета. Попробуйте еще раз.');
     } finally {
       setUploading(false);
     }
