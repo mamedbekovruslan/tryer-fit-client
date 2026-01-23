@@ -132,6 +132,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: clientWithTrainer.email,
             username: clientWithTrainer.username,
             user_type: userProfile.user_type,
+            // Поля профиля клиента
+            first_name: clientWithTrainer.first_name,
+            last_name: clientWithTrainer.last_name,
+            waist_circumference: clientWithTrainer.waist_circumference,
+            chest_circumference: clientWithTrainer.chest_circumference,
+            hip_circumference: clientWithTrainer.hip_circumference,
+            arm_circumference: clientWithTrainer.arm_circumference,
+            leg_circumference: clientWithTrainer.leg_circumference,
+            fitness_goal: clientWithTrainer.fitness_goal,
+            expected_result: clientWithTrainer.expected_result,
+            contraindications: clientWithTrainer.contraindications,
+            diseases: clientWithTrainer.diseases,
+            limitations: clientWithTrainer.limitations,
+            training_experience: clientWithTrainer.training_experience,
+            current_diet: clientWithTrainer.current_diet,
+            photo_urls: clientWithTrainer.photo_urls,
             trainer: clientWithTrainer.trainer,
           };
           setUser(authUser);

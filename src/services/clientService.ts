@@ -7,12 +7,21 @@ export interface Client {
   email: string;
   first_name?: string;
   last_name?: string;
-  phone?: string;
-  age?: number;
-  experience?: string;
+  // Поля профиля
+  waist_circumference?: number;
+  chest_circumference?: number;
+  hip_circumference?: number;
+  arm_circumference?: number;
+  leg_circumference?: number;
+  fitness_goal?: string;
+  expected_result?: string;
   contraindications?: string;
-  desired_result?: string;
+  diseases?: string;
+  limitations?: string;
+  training_experience?: string;
   current_diet?: string;
+  photo_urls?: string[];
+  trainer?: any; // Тренер, связан с клиентом
   // другие поля клиента
 }
 
@@ -48,6 +57,24 @@ export interface AssignNutritionPlanRequest {
   subcategory_id: number;
 }
 
+export interface UpdateClientProfileRequest {
+  first_name?: string;
+  last_name?: string;
+  waist_circumference?: number;
+  chest_circumference?: number;
+  hip_circumference?: number;
+  arm_circumference?: number;
+  leg_circumference?: number;
+  fitness_goal?: string;
+  expected_result?: string;
+  contraindications?: string;
+  diseases?: string;
+  limitations?: string;
+  training_experience?: string;
+  current_diet?: string;
+  photo_urls?: string[];
+}
+
 export const clientService = {
   // Получение профиля текущего клиента
   getMyProfile: async (): Promise<Client> => {
@@ -56,6 +83,17 @@ export const clientService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching client profile:', error);
+      throw error;
+    }
+  },
+
+  // Обновление профиля текущего клиента
+  updateProfile: async (profileData: UpdateClientProfileRequest): Promise<Client> => {
+    try {
+      const response = await apiClient.put('/clients/profile', profileData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating client profile:', error);
       throw error;
     }
   },
