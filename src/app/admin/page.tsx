@@ -2,16 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Grid, Button, Modal, TextInput } from '@mantine/core';
+import { FiPlus, FiX } from 'react-icons/fi';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { trainerService, Trainer } from '@/services/trainerService';
-import { Client } from '@/services/clientService';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // Типы данных
-interface ExtendedClient extends Client {
+interface ExtendedClient {
+  id: number;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
   is_favorite: boolean; // поле "звездочка"
+  trainer?: {
+    id: number;
+    username: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  }; // информация о привязанном тренере
 }
 
 interface ChatMessage {
@@ -36,37 +48,25 @@ export default function AdminPage() {
   const [editValue, setEditValue] = useState<string>('');
   const [opened, setOpened] = useState(false);
 
-  // Моковые данные для демонстрации
-  const mockClientsInWork: ExtendedClient[] = [
-    { id: 1, username: 'client1', email: 'client1@example.com', first_name: 'Иван', last_name: 'Иванов', is_favorite: true },
-    { id: 2, username: 'client2', email: 'client2@example.com', first_name: 'Мария', last_name: 'Петрова', is_favorite: false },
-  ];
-
-  const mockNewClients: ExtendedClient[] = [
-    { id: 3, username: 'newclient1', email: 'newclient1@example.com', first_name: 'Алексей', last_name: 'Сидоров', is_favorite: false },
-    { id: 4, username: 'newclient2', email: 'newclient2@example.com', first_name: 'Елена', last_name: 'Козлова', is_favorite: true },
-  ];
-
-  const mockChatClients: ExtendedClient[] = [
-    { id: 1, username: 'client1', email: 'client1@example.com', first_name: 'Иван', last_name: 'Иванов', is_favorite: true },
-    { id: 3, username: 'newclient1', email: 'newclient1@example.com', first_name: 'Алексей', last_name: 'Сидоров', is_favorite: false },
-  ];
-
-  const mockUnreadCounts = {
-    1: 3,
-    3: 1
-  };
-
   useEffect(() => {
-    // Загружаем данные тренера
+    // Загружаем данные тренера и клиентов
     const loadTrainerData = async () => {
       if (user && user.user_type === 'trainer') {
         try {
           // Получаем данные профиля текущего тренера с бэкенда
           const trainerData = await trainerService.getMyTrainerProfile();
           setTrainer(trainerData);
+
+          // Загружаем клиентов, привязанных к тренеру
+          const clientsInWorkData = await trainerService.getClientsByTrainerId(trainerData.id);
+          setClientsInWork(clientsInWorkData);
+
+          // Загружаем клиентов, которые не привязаны к тренеру
+          const newClientsData = await trainerService.getUnassignedClients();
+          setNewClients(newClientsData);
+
         } catch (error) {
-          console.error('Error loading trainer profile:', error);
+          console.error('Error loading trainer data:', error);
           // Если эндпоинт /trainers/profile не реализован на бэкенде,
           // используем базовую информацию из объекта user
           const basicTrainerInfo = {
@@ -97,9 +97,17 @@ export default function AdminPage() {
         }
       }
 
-      // Устанавливаем моковые данные для других разделов
-      setClientsInWork(mockClientsInWork);
-      setNewClients(mockNewClients);
+      // Устанавливаем моковые данные для чатов и счетчиков
+      const mockChatClients: ExtendedClient[] = [
+        { id: 1, username: 'client1', email: 'client1@example.com', first_name: 'Иван', last_name: 'Иванов', is_favorite: true },
+        { id: 3, username: 'newclient1', email: 'newclient1@example.com', first_name: 'Алексей', last_name: 'Сидоров', is_favorite: false },
+      ];
+
+      const mockUnreadCounts = {
+        1: 3,
+        3: 1
+      };
+
       setChatClients(mockChatClients);
       setUnreadCounts(mockUnreadCounts);
 
@@ -130,6 +138,50 @@ export default function AdminPage() {
       } catch (error) {
         console.error('Error saving trainer data:', error);
       }
+    }
+  };
+
+  const handleAddClient = async (clientId: number) => {
+    // Реализация добавления клиента через API
+    if (!user || !trainer) return;
+
+    try {
+      // Вызываем API для привязки клиента к тренеру
+      const assignedClient = await trainerService.assignClientToTrainer(trainer.id, clientId);
+
+      // Удаляем клиента из списка новых клиентов
+      const updatedNewClients = newClients.filter(client => client.id !== clientId);
+
+      // Добавляем клиента в список клиентов в работе
+      const updatedClientsInWork = [...clientsInWork, assignedClient];
+
+      // Обновляем состояние
+      setNewClients(updatedNewClients);
+      setClientsInWork(updatedClientsInWork);
+    } catch (error) {
+      console.error('Error assigning client to trainer:', error);
+    }
+  };
+
+  const handleRemoveClient = async (clientId: number) => {
+    // Реализация удаления клиента через API
+    if (!user || !trainer) return;
+
+    try {
+      // Вызываем API для отвязки клиента от тренера
+      const unassignedClient = await trainerService.unassignClientFromTrainer(trainer.id, clientId);
+
+      // Удаляем клиента из списка клиентов в работе
+      const updatedClientsInWork = clientsInWork.filter(client => client.id !== clientId);
+
+      // Добавляем клиента в список новых клиентов
+      const updatedNewClients = [...newClients, unassignedClient];
+
+      // Обновляем состояние
+      setClientsInWork(updatedClientsInWork);
+      setNewClients(updatedNewClients);
+    } catch (error) {
+      console.error('Error unassigning client from trainer:', error);
     }
   };
 
@@ -230,10 +282,32 @@ export default function AdminPage() {
                       onClick={() => router.push(`/admin/client/${client.id}`)}
                     >
                       <Flex justify="space-between" align="center">
-                        <Text fw={500}>
-                          {client.first_name} {client.last_name} ({client.username})
-                          {client.is_favorite && <Badge ml="xs" color="yellow">★</Badge>}
-                        </Text>
+                        <Flex align="center" gap="sm" style={{ flex: 1, minWidth: 0 }}>
+                          <Avatar size="sm" radius="xl">
+                            {(client.first_name?.charAt(0) || '') + (client.last_name?.charAt(0) || '')}
+                          </Avatar>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <Text fw={500} truncate="end">
+                              {client.first_name} {client.last_name} ({client.username})
+                            </Text>
+                          </div>
+                        </Flex>
+                        <Button
+                          variant="outline"
+                          color="red"
+                          size="compact-sm"
+                          w={32}
+                          h={32}
+                          p={0}
+                          miw={32}
+                          style={{ flex: '0 0 auto' }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering parent click
+                            handleRemoveClient(client.id);
+                          }}
+                        >
+                          <FiX size={16} />
+                        </Button>
                       </Flex>
                     </div>
                   ))}
@@ -249,10 +323,32 @@ export default function AdminPage() {
                       onClick={() => router.push(`/admin/client/${client.id}`)}
                     >
                       <Flex justify="space-between" align="center">
-                        <Text fw={500}>
-                          {client.first_name} {client.last_name} ({client.username})
-                          {client.is_favorite && <Badge ml="xs" color="yellow">★</Badge>}
-                        </Text>
+                        <Flex align="center" gap="sm" style={{ flex: 1, minWidth: 0 }}>
+                          <Avatar size="sm" radius="xl">
+                            {(client.first_name?.charAt(0) || '') + (client.last_name?.charAt(0) || '')}
+                          </Avatar>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <Text fw={500} truncate="end">
+                              {client.first_name} {client.last_name} ({client.username})
+                            </Text>
+                          </div>
+                        </Flex>
+                        <Button
+                          variant="outline"
+                          color="green"
+                          size="compact-sm"
+                          w={32}
+                          h={32}
+                          p={0}
+                          miw={32}
+                          style={{ flex: '0 0 auto' }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering parent click
+                            handleAddClient(client.id);
+                          }}
+                        >
+                          <FiPlus size={16} />
+                        </Button>
                       </Flex>
                     </div>
                   ))}
@@ -273,7 +369,6 @@ export default function AdminPage() {
                       <Flex justify="space-between" align="center">
                         <Text fw={500}>
                           {client.first_name} {client.last_name} ({client.username})
-                          {client.is_favorite && <Badge ml="xs" color="yellow">★</Badge>}
                         </Text>
                         {unreadCounts[client.id] > 0 && (
                           <Badge color="red">{unreadCounts[client.id]}</Badge>
