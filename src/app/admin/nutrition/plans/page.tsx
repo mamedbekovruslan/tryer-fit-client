@@ -2,9 +2,9 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
-import NutritionCategoryViewer from '@/features/nutrition/category/ui/NutritionCategoryViewer';
+import NutritionPlanManager from '@/features/nutrition/plan/ui/NutritionPlanManager';
 
-export default function NutritionPage() {
+export default function NutritionPlansPage() {
   const { user } = useAuth();
 
   if (!user) {
@@ -21,7 +21,7 @@ export default function NutritionPage() {
 
   return (
     <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
-      <NutritionCategoryViewer />
+      <NutritionPlanManager />
     </UserTypeProtectedRoute>
   );
 }

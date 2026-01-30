@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Grid, Button, Modal, TextInput } from '@mantine/core';
+import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Grid, Button, TextInput, NumberInput, Select } from '@mantine/core';
 import { FiPlus, FiX } from 'react-icons/fi';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
@@ -44,9 +44,22 @@ export default function AdminPage() {
   const [newClients, setNewClients] = useState<ExtendedClient[]>([]);
   const [chatClients, setChatClients] = useState<ExtendedClient[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<{[key: number]: number}>({});
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState<string>('');
-  const [opened, setOpened] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    middle_name: '',
+    gender: '',
+    height: undefined as number | undefined,
+    weight: undefined as number | undefined,
+    phone: '',
+    birth_date: '',
+    education: '',
+    institution: '',
+    degree: '',
+    specialization: '',
+    certificate_number: '',
+  });
 
   useEffect(() => {
     // Загружаем данные тренера и клиентов
@@ -117,29 +130,43 @@ export default function AdminPage() {
     loadTrainerData();
   }, [user]);
 
-  const handleFieldClick = (fieldName: string, currentValue: any) => {
-    setEditingField(fieldName);
-    setEditValue(currentValue || '');
-    setOpened(true);
-  };
-
   const handleSave = async () => {
-    if (trainer && editingField) {
+    if (trainer) {
       try {
-        // Вызов API для сохранения изменений
-        const updatedTrainer = await trainerService.updateTrainerField(trainer.id, editingField, editValue);
+        // Отправляем обновленные данные на бэкенд
+        const updatedTrainer = await trainerService.updateTrainer(trainer.id, formData);
 
         // Обновляем локальное состояние
         setTrainer(updatedTrainer);
 
-        setOpened(false);
-        setEditingField(null);
-        setEditValue('');
+        // Выходим из режима редактирования
+        setIsEditing(false);
       } catch (error) {
         console.error('Error saving trainer data:', error);
       }
     }
   };
+
+  // Обновляем formData при переходе в режим редактирования
+  useEffect(() => {
+    if (trainer && isEditing) {
+      setFormData({
+        first_name: trainer.first_name || '',
+        last_name: trainer.last_name || '',
+        middle_name: trainer.middle_name || '',
+        gender: trainer.gender || '',
+        height: trainer.height,
+        weight: trainer.weight,
+        phone: trainer.phone || '',
+        birth_date: trainer.birth_date || '',
+        education: trainer.education || '',
+        institution: trainer.institution || '',
+        degree: trainer.degree || '',
+        specialization: trainer.specialization || '',
+        certificate_number: trainer.certificate_number || '',
+      });
+    }
+  }, [isEditing, trainer]);
 
   const handleAddClient = async (clientId: number) => {
     // Реализация добавления клиента через API
@@ -232,40 +259,204 @@ export default function AdminPage() {
 
                   <Title order={3} ta="center">Информация о тренере</Title>
 
-                  <div onClick={() => handleFieldClick('first_name', trainer.first_name)}>
-                    <Text size="sm" c="dimmed">Имя</Text>
-                    <Text fw={500}>{trainer.first_name || 'Не указано'}</Text>
-                  </div>
+                  {isEditing ? (
+                    <>
+                      <div>
+                        <Text size="sm" c="dimmed">Имя</Text>
+                        <TextInput
+                          value={formData.first_name}
+                          onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                        />
+                      </div>
 
-                  <div onClick={() => handleFieldClick('last_name', trainer.last_name)}>
-                    <Text size="sm" c="dimmed">Фамилия</Text>
-                    <Text fw={500}>{trainer.last_name || 'Не указана'}</Text>
-                  </div>
+                      <div>
+                        <Text size="sm" c="dimmed">Фамилия</Text>
+                        <TextInput
+                          value={formData.last_name}
+                          onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                        />
+                      </div>
 
-                  <div onClick={() => handleFieldClick('specialization', trainer.specialization)}>
-                    <Text size="sm" c="dimmed">Специализация</Text>
-                    <Text fw={500}>{trainer.specialization || 'Не указана'}</Text>
-                  </div>
+                      <div>
+                        <Text size="sm" c="dimmed">Отчество</Text>
+                        <TextInput
+                          value={formData.middle_name}
+                          onChange={(e) => setFormData({...formData, middle_name: e.target.value})}
+                        />
+                      </div>
 
-                  <div onClick={() => handleFieldClick('education', trainer.education)}>
-                    <Text size="sm" c="dimmed">Образование</Text>
-                    <Text fw={500}>{trainer.education || 'Не указано'}</Text>
-                  </div>
+                      <div>
+                        <Text size="sm" c="dimmed">Пол</Text>
+                        <Select
+                          value={formData.gender}
+                          onChange={(value) => setFormData({...formData, gender: value || ''})}
+                          data={[
+                            { value: 'male', label: 'Мужской' },
+                            { value: 'female', label: 'Женский' },
+                            { value: 'other', label: 'Другое' },
+                          ]}
+                        />
+                      </div>
 
-                  <div onClick={() => handleFieldClick('degree', trainer.degree)}>
-                    <Text size="sm" c="dimmed">Степень</Text>
-                    <Text fw={500}>{trainer.degree || 'Не указана'}</Text>
-                  </div>
+                      <div>
+                        <Text size="sm" c="dimmed">Рост (см)</Text>
+                        <NumberInput
+                          value={formData.height}
+                          onChange={(value) => setFormData({...formData, height: value || undefined})}
+                          precision={2}
+                          min={0}
+                        />
+                      </div>
 
-                  <div onClick={() => handleFieldClick('phone', trainer.phone)}>
-                    <Text size="sm" c="dimmed">Телефон</Text>
-                    <Text fw={500}>{trainer.phone || 'Не указан'}</Text>
-                  </div>
+                      <div>
+                        <Text size="sm" c="dimmed">Вес (кг)</Text>
+                        <NumberInput
+                          value={formData.weight}
+                          onChange={(value) => setFormData({...formData, weight: value || undefined})}
+                          precision={2}
+                          min={0}
+                        />
+                      </div>
 
-                  <div onClick={() => handleFieldClick('email', trainer.email)}>
-                    <Text size="sm" c="dimmed">Email</Text>
-                    <Text fw={500}>{trainer.email || 'Не указан'}</Text>
-                  </div>
+                      <div>
+                        <Text size="sm" c="dimmed">Телефон</Text>
+                        <TextInput
+                          value={formData.phone}
+                          onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        />
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Дата рождения</Text>
+                        <TextInput
+                          type="date"
+                          value={formData.birth_date}
+                          onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
+                        />
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Образование</Text>
+                        <TextInput
+                          value={formData.education}
+                          onChange={(e) => setFormData({...formData, education: e.target.value})}
+                        />
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Учреждение</Text>
+                        <TextInput
+                          value={formData.institution}
+                          onChange={(e) => setFormData({...formData, institution: e.target.value})}
+                        />
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Степень</Text>
+                        <TextInput
+                          value={formData.degree}
+                          onChange={(e) => setFormData({...formData, degree: e.target.value})}
+                        />
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Специализация</Text>
+                        <TextInput
+                          value={formData.specialization}
+                          onChange={(e) => setFormData({...formData, specialization: e.target.value})}
+                        />
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Номер сертификата</Text>
+                        <TextInput
+                          value={formData.certificate_number}
+                          onChange={(e) => setFormData({...formData, certificate_number: e.target.value})}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <Text size="sm" c="dimmed">Имя</Text>
+                        <Text fw={500}>{trainer.first_name || 'Не указано'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Фамилия</Text>
+                        <Text fw={500}>{trainer.last_name || 'Не указана'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Отчество</Text>
+                        <Text fw={500}>{trainer.middle_name || 'Не указано'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Пол</Text>
+                        <Text fw={500}>{trainer.gender || 'Не указан'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Рост</Text>
+                        <Text fw={500}>{trainer.height ? `${trainer.height} см` : 'Не указан'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Вес</Text>
+                        <Text fw={500}>{trainer.weight ? `${trainer.weight} кг` : 'Не указан'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Телефон</Text>
+                        <Text fw={500}>{trainer.phone || 'Не указан'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Дата рождения</Text>
+                        <Text fw={500}>{trainer.birth_date || 'Не указана'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Образование</Text>
+                        <Text fw={500}>{trainer.education || 'Не указано'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Учреждение</Text>
+                        <Text fw={500}>{trainer.institution || 'Не указано'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Степень</Text>
+                        <Text fw={500}>{trainer.degree || 'Не указана'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Специализация</Text>
+                        <Text fw={500}>{trainer.specialization || 'Не указана'}</Text>
+                      </div>
+
+                      <div>
+                        <Text size="sm" c="dimmed">Номер сертификата</Text>
+                        <Text fw={500}>{trainer.certificate_number || 'Не указан'}</Text>
+                      </div>
+                    </>
+                  )}
+                  <Flex justify="flex-end" gap="sm" mt="md">
+                    {!isEditing ? (
+                      <Button
+                        onClick={() => setIsEditing(true)}
+                      >
+                        Редактировать
+                      </Button>
+                    ) : (
+                      <>
+                        <Button variant="outline" onClick={() => setIsEditing(false)}>Отменить</Button>
+                        <Button onClick={() => handleSave()}>Сохранить</Button>
+                      </>
+                    )}
+                  </Flex>
                 </Stack>
               </Card>
             </Grid.Col>
@@ -382,21 +573,6 @@ export default function AdminPage() {
         </Paper>
       </Container>
 
-      {/* Модальное окно для редактирования полей */}
-      <Modal
-        opened={opened}
-        onClose={() => setOpened(false)}
-        title={`Редактирование ${editingField}`}
-      >
-        <TextInput
-          label="Значение"
-          value={editValue}
-          onChange={(event) => setEditValue(event.currentTarget.value)}
-        />
-        <Button onClick={handleSave} fullWidth mt="md">
-          Сохранить
-        </Button>
-      </Modal>
     </UserTypeProtectedRoute>
   );
 }

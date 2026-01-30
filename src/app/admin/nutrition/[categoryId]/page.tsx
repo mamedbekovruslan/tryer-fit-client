@@ -1,173 +1,72 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Title, 
-  Text, 
-  Paper, 
-  Stack, 
-  Card, 
-  Grid, 
-  Button, 
+import {
+  Container,
+  Title,
+  Text,
+  Paper,
+  Stack,
+  Card,
+  Grid,
+  Button,
   Flex,
   Badge,
   Group,
   ScrollArea,
-  Divider
+  Divider,
+  LoadingOverlay,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { FiPlus } from 'react-icons/fi';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
-
-// Типы данных
-interface NutritionCategory {
-  id: number;
-  name: string;
-  description?: string;
-  created_at: string;
-}
-
-interface Meal {
-  id: number;
-  name: string;
-  description: string;
-}
-
-interface NutritionDay {
-  id: number;
-  name: string;
-  category_id: number;
-  meals: Meal[];
-  created_at: string;
-}
+import { useParams, useRouter } from 'next/navigation';
+import { nutritionService, NutritionDay } from '@/services/nutritionService';
 
 export default function NutritionCategoryPage() {
-  const { categoryId } = useParams();
+  const params = useParams();
+  const router = useRouter();
   const { user } = useAuth();
-  const [category, setCategory] = useState<NutritionCategory | null>(null);
+
+  const categoryId = Number(params.categoryId);
   const [days, setDays] = useState<NutritionDay[]>([]);
   const [selectedDay, setSelectedDay] = useState<NutritionDay | null>(null);
-
-  // Моковые данные для демонстрации
-  const mockCategories: NutritionCategory[] = [
-    {
-      id: 1,
-      name: 'Похудение',
-      description: 'Правила питания для снижения веса',
-      created_at: '2024-11-15'
-    },
-    {
-      id: 2,
-      name: 'Набор массы',
-      description: 'Правила питания для набора мышечной массы',
-      created_at: '2024-11-20'
-    },
-    {
-      id: 3,
-      name: 'Спортивное питание',
-      description: 'Правила спортивного питания для атлетов',
-      created_at: '2024-12-01'
-    },
-    {
-      id: 4,
-      name: 'Вегетарианское питание',
-      description: 'Правила вегетарианского и веганского питания',
-      created_at: '2024-12-10'
-    }
-  ];
-
-  const mockDays: NutritionDay[] = [
-    {
-      id: 1,
-      name: 'День 1',
-      category_id: Number(categoryId),
-      meals: [
-        {
-          id: 1,
-          name: 'Завтрак',
-          description: 'Овсянка с ягодами и орехами'
-        },
-        {
-          id: 2,
-          name: 'Обед',
-          description: 'Куриная грудка с овощами и бурый рис'
-        },
-        {
-          id: 3,
-          name: 'Ужин',
-          description: 'Запеченная рыба с салатом'
-        }
-      ],
-      created_at: '2024-12-01'
-    },
-    {
-      id: 2,
-      name: 'День 2',
-      category_id: Number(categoryId),
-      meals: [
-        {
-          id: 1,
-          name: 'Завтрак',
-          description: 'Творог с медом и фруктами'
-        },
-        {
-          id: 2,
-          name: 'Обед',
-          description: 'Говядина с картофелем и овощами'
-        },
-        {
-          id: 3,
-          name: 'Ужин',
-          description: 'Овощное рагу с яйцом'
-        }
-      ],
-      created_at: '2024-12-02'
-    },
-    {
-      id: 3,
-      name: 'День 3',
-      category_id: Number(categoryId),
-      meals: [
-        {
-          id: 1,
-          name: 'Завтрак',
-          description: 'Яичница с авокадо и цельнозерновым хлебом'
-        },
-        {
-          id: 2,
-          name: 'Обед',
-          description: 'Лосось с киноа и брокколи'
-        },
-        {
-          id: 3,
-          name: 'Ужин',
-          description: 'Творожная запеканка с ягодами'
-        }
-      ],
-      created_at: '2024-12-03'
-    }
-  ];
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Загружаем данные категории
-    const loadCategoryData = async () => {
-      const foundCategory = mockCategories.find(cat => cat.id === Number(categoryId));
-      setCategory(foundCategory || null);
-      setDays(mockDays);
-      
-      // Устанавливаем первый день как выбранный по умолчанию
-      if (mockDays.length > 0) {
-        setSelectedDay(mockDays[0]);
-      }
-    };
-
-    loadCategoryData();
+    if (categoryId) {
+      loadDays();
+    }
   }, [categoryId]);
+
+  const loadDays = async () => {
+    try {
+      setLoading(true);
+      const data = await nutritionService.getNutritionDaysByCategory(categoryId);
+      setDays(data);
+
+      // Устанавливаем первый день как выбранный по умолчанию
+      if (data.length > 0) {
+        setSelectedDay(data[0]);
+      }
+    } catch (error) {
+      notifications.show({
+        title: 'Ошибка загрузки',
+        message: 'Не удалось загрузить дни питания',
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDayClick = (day: NutritionDay) => {
     setSelectedDay(day);
+  };
+
+  const handleAddDay = () => {
+    router.push(`/admin/nutrition/${categoryId}/add-day`);
   };
 
   if (!user) {
@@ -182,34 +81,21 @@ export default function NutritionCategoryPage() {
     );
   }
 
-  if (!category) {
-    return (
-      <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
-        <Container size="md" py="xl">
-          <Paper shadow="md" p="xl" radius="md">
-            <Text ta="center">Категория не найдена</Text>
-          </Paper>
-        </Container>
-      </UserTypeProtectedRoute>
-    );
-  }
-
   return (
     <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
       <Container size="lg" py="xl">
         <Paper shadow="md" p="xl" radius="md">
+          <LoadingOverlay visible={loading} overlayProps={{ radius: 'sm', blur: 2 }} />
+
           <Flex justify="space-between" align="center" mb="xl">
-            <div>
-              <Title order={1}>{category.name}</Title>
-              {category.description && (
-                <Text c="dimmed" mt="xs">{category.description}</Text>
-              )}
-            </div>
-            <Link href={`/admin/nutrition/${categoryId}/create`} passHref legacyBehavior>
-              <Button size="lg">
-                Добавить день
-              </Button>
-            </Link>
+            <Title order={1}>Дни питания</Title>
+            <Button
+              leftSection={<FiPlus size={16} />}
+              onClick={handleAddDay}
+              size="lg"
+            >
+              Добавить день
+            </Button>
           </Flex>
 
           <Grid gutter="xl">
@@ -217,17 +103,17 @@ export default function NutritionCategoryPage() {
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Title order={3} mb="md">Дни питания</Title>
-                
+
                 <ScrollArea h={400} offsetScrollbars>
                   <Stack gap="sm">
                     {days.map(day => (
-                      <Card 
+                      <Card
                         key={day.id}
-                        shadow="xs" 
-                        padding="md" 
-                        radius="sm" 
+                        shadow="xs"
+                        padding="md"
+                        radius="sm"
                         withBorder
-                        style={{ 
+                        style={{
                           cursor: 'pointer',
                           backgroundColor: selectedDay?.id === day.id ? '#f0f7ff' : 'inherit'
                         }}
@@ -235,24 +121,24 @@ export default function NutritionCategoryPage() {
                       >
                         <Flex justify="space-between" align="center">
                           <Text fw={500}>{day.name}</Text>
-                          <Badge variant="light">{day.meals.length} приемов</Badge>
+                          <Badge variant="light">День</Badge>
                         </Flex>
                         <Text size="sm" c="dimmed" mt="xs">
-                          Создан: {day.created_at}
+                          Создан: {new Date(day.createdAt).toLocaleDateString()}
                         </Text>
                       </Card>
                     ))}
                   </Stack>
                 </ScrollArea>
-                
-                {days.length === 0 && (
+
+                {days.length === 0 && !loading && (
                   <Text c="dimmed" ta="center" mt="lg">
                     Дни питания отсутствуют
                   </Text>
                 )}
               </Card>
             </Grid.Col>
-            
+
             {/* Правая колонка - детали выбранного дня */}
             <Grid.Col span={{ base: 12, md: 8 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
@@ -260,25 +146,35 @@ export default function NutritionCategoryPage() {
                   <>
                     <Flex justify="space-between" align="center" mb="md">
                       <Title order={2}>{selectedDay.name}</Title>
-                      <Badge variant="outline">Создан: {selectedDay.created_at}</Badge>
+                      <Badge variant="outline">Создан: {new Date(selectedDay.createdAt).toLocaleDateString()}</Badge>
                     </Flex>
-                    
+
                     <Divider mb="md" />
-                    
+
+                    {selectedDay.description && (
+                      <Paper p="md" withBorder mb="md">
+                        <Text size="lg">{selectedDay.description}</Text>
+                      </Paper>
+                    )}
+
                     <Stack gap="md">
-                      {selectedDay.meals.map(meal => (
-                        <Card key={meal.id} shadow="none" padding="md" radius="sm" withBorder>
-                          <Title order={4}>{meal.name}</Title>
-                          <Text mt="sm">{meal.description}</Text>
-                        </Card>
-                      ))}
+                      <Card shadow="none" padding="md" radius="sm" withBorder>
+                        <Title order={4}>Приемы пищи</Title>
+                        <Text mt="sm" c="dimmed">Функционал добавления приемов пищи будет реализован в следующей версии</Text>
+
+                        <Stack mt="md">
+                          <Button variant="outline">
+                            Добавить прием пищи
+                          </Button>
+                        </Stack>
+                      </Card>
                     </Stack>
                   </>
-                ) : (
+                ) : !loading ? (
                   <Text c="dimmed" ta="center">
                     Выберите день из списка для просмотра деталей
                   </Text>
-                )}
+                ) : null}
               </Card>
             </Grid.Col>
           </Grid>
