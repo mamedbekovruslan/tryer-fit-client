@@ -26,6 +26,21 @@ export interface NutritionPlan {
   updatedAt: Date;
 }
 
+export interface Meal {
+  id: number;
+  name: string;
+  description?: string;
+  nutritionDayId: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateMealRequest {
+  name: string;
+  description?: string;
+  nutritionDayId: number;
+}
+
 export interface CreateNutritionCategoryRequest {
   name: string;
   description?: string;
@@ -237,6 +252,79 @@ export const nutritionService = {
       await apiClient.delete(`/nutrition-plans/${id}`);
     } catch (error) {
       console.error('Error deleting nutrition plan:', error);
+      throw error;
+    }
+  },
+
+  // Meals
+  getMealsByNutritionDay: async (nutritionDayId: number): Promise<Meal[]> => {
+    try {
+      const response = await apiClient.get<Meal[]>(
+        `/meals/day/${nutritionDayId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching meals:', error);
+      throw error;
+    }
+  },
+
+  getAllMeals: async (): Promise<Meal[]> => {
+    try {
+      const response = await apiClient.get<Meal[]>('/meals');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all meals:', error);
+      throw error;
+    }
+  },
+
+  createMeal: async (
+    mealData: CreateMealRequest
+  ): Promise<Meal> => {
+    try {
+      const response = await apiClient.post<Meal>(
+        '/meals',
+        mealData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error creating meal:', error);
+      throw error;
+    }
+  },
+
+  getMealById: async (id: number): Promise<Meal> => {
+    try {
+      const response = await apiClient.get<Meal>(`/meals/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching meal:', error);
+      throw error;
+    }
+  },
+
+  updateMeal: async (
+    id: number,
+    mealData: Partial<CreateMealRequest>
+  ): Promise<Meal> => {
+    try {
+      const response = await apiClient.put<Meal>(
+        `/meals/${id}`,
+        mealData
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating meal:', error);
+      throw error;
+    }
+  },
+
+  deleteMeal: async (id: number): Promise<void> => {
+    try {
+      await apiClient.delete(`/meals/${id}`);
+    } catch (error) {
+      console.error('Error deleting meal:', error);
       throw error;
     }
   },
