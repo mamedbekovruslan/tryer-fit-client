@@ -41,6 +41,19 @@ export interface CreateMealRequest {
   nutritionDayId: number;
 }
 
+export interface ClientNutritionPlan {
+  id: number;
+  client: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  nutritionPlan: NutritionPlan;
+  isActive: boolean;
+  assignedAt: Date;
+  updatedAt: Date;
+}
+
 export interface CreateNutritionCategoryRequest {
   name: string;
   description?: string;
@@ -325,6 +338,31 @@ export const nutritionService = {
       await apiClient.delete(`/meals/${id}`);
     } catch (error) {
       console.error('Error deleting meal:', error);
+      throw error;
+    }
+  },
+
+  // Client Nutrition Plans
+  getClientNutritionPlans: async (clientId: number): Promise<ClientNutritionPlan[]> => {
+    try {
+      const response = await apiClient.get<ClientNutritionPlan[]>(
+        `/client-nutrition-plans/client/${clientId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching client nutrition plans:', error);
+      throw error;
+    }
+  },
+
+  getActiveClientNutritionPlans: async (clientId: number): Promise<ClientNutritionPlan[]> => {
+    try {
+      const response = await apiClient.get<ClientNutritionPlan[]>(
+        `/client-nutrition-plans/client/${clientId}/active`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching active client nutrition plans:', error);
       throw error;
     }
   },
