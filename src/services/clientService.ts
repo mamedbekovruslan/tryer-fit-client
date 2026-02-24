@@ -142,6 +142,17 @@ export const clientService = {
     // }
   },
 
+  // Получение информации о клиенте по ID
+  getClientById: async (clientId: number): Promise<Client> => {
+    try {
+      const response = await apiClient.get(`/clients/${clientId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching client with ID ${clientId}:`, error);
+      throw error;
+    }
+  },
+
   // Получение назначенных планов питания для клиента
   getNutritionPlans: async (clientId: number): Promise<ClientNutritionPlan[]> => {
     // Пока используем моковые данные до реализации API

@@ -13,40 +13,16 @@ import {
   Text,
   Group,
   Badge,
-  List,
-  ListItem,
+  LoadingOverlay,
+  ActionIcon,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-// Типы данных
-interface ClientNutritionPlan {
-  id: number;
-  client_id: number;
-  day_id: number;
-  category_id: number;
-  subcategory_id: number;
-  assigned_at: string;
-  day: {
-    id: number;
-    name: string;
-    description: string;
-    subcategory_id: number;
-  };
-  category: {
-    id: number;
-    name: string;
-    description: string;
-  };
-  subcategory: {
-    id: number;
-    name: string;
-    description: string;
-    category_id: number;
-  };
-}
+import { nutritionService, ClientNutritionPlan } from '@/services/nutritionService';
+import { FiEdit2, FiToggleRight, FiToggleLeft } from 'react-icons/fi';
 
 export default function ClientNutritionPlansPage() {
   const { id: clientId } = useParams();
@@ -54,84 +30,27 @@ export default function ClientNutritionPlansPage() {
   const router = useRouter();
 
   // Состояния для данных
-  const [nutritionPlans, setNutritionPlans] = useState<ClientNutritionPlan[]>([]);
+  const [clientNutritionPlans, setClientNutritionPlans] = useState<ClientNutritionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Загрузка планов питания клиента
+  // Загрузка назначенных планов питания клиента
   useEffect(() => {
-    // Пока используем моковые данные до реализации API
-    const fetchNutritionPlans = async () => {
+    const fetchClientNutritionPlans = async () => {
       try {
         setLoading(true);
-
-        // Имитация задержки сети
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        // Моковые данные
-        const mockPlans: ClientNutritionPlan[] = [
-          {
-            id: 1,
-            client_id: Number(clientId),
-            day_id: 1,
-            category_id: 1,
-            subcategory_id: 1,
-            assigned_at: '2024-01-15T10:30:00Z',
-            day: {
-              id: 1,
-              name: 'День 1',
-              description: 'Начало программы похудения с высоким содержанием белка',
-              subcategory_id: 1
-            },
-            category: {
-              id: 1,
-              name: 'Похудение',
-              description: 'Планы питания для снижения веса'
-            },
-            subcategory: {
-              id: 1,
-              name: 'Белковая диета',
-              description: 'Высокое содержание белка',
-              category_id: 1
-            }
-          },
-          {
-            id: 2,
-            client_id: Number(clientId),
-            day_id: 2,
-            category_id: 1,
-            subcategory_id: 1,
-            assigned_at: '2024-01-16T14:20:00Z',
-            day: {
-              id: 2,
-              name: 'День 2',
-              description: 'Продолжение программы похудения с акцентом на овощи',
-              subcategory_id: 1
-            },
-            category: {
-              id: 1,
-              name: 'Похудение',
-              description: 'Планы питания для снижения веса'
-            },
-            subcategory: {
-              id: 1,
-              name: 'Белковая диета',
-              description: 'Высокое содержание белка',
-              category_id: 1
-            }
-          }
-        ];
-
-        setNutritionPlans(mockPlans);
+        // Загружаем все назначенные планы питания для клиента
+        const plans = await nutritionService.getClientNutritionPlans(Number(clientId));
+        setClientNutritionPlans(plans);
       } catch (err) {
-        setError('Ошибка загрузки планов питания: ' + (err as Error).message);
+        setError('Ошибка загрузки назначенных планов питания: ' + (err as Error).message);
       } finally {
         setLoading(false);
       }
     };
 
     if (clientId) {
-      fetchNutritionPlans();
+      fetchClientNutritionPlans();
     }
   }, [clientId]);
 
@@ -147,11 +66,42 @@ export default function ClientNutritionPlansPage() {
     );
   }
 
+  // Функция для переключения статуса плана
+  const togglePlanStatus = async (planId: number, newStatus: boolean) => {
+    try {
+      setLoading(true);
+      // Обновляем статус плана
+      await nutritionService.updateClientNutritionPlan(planId, { isActive: newStatus });
+
+      // Обновляем локальный список планов
+      setClientNutritionPlans(prevPlans =>
+        prevPlans.map(plan =>
+          plan.id === planId ? { ...plan, isActive: newStatus } : plan
+        )
+      );
+
+      notifications.show({
+        title: 'Успешно',
+        message: `План питания ${newStatus ? 'активирован' : 'деактивирован'}`,
+        color: 'green',
+      });
+    } catch (err) {
+      setError('Ошибка изменения статуса плана: ' + (err as Error).message);
+      notifications.show({
+        title: 'Ошибка',
+        message: 'Не удалось изменить статус плана питания',
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
       <Container size="lg" py="xl">
         <Paper shadow="md" p="xl" radius="md">
-          <Title order={1} ta="center" mb="xl">Планы питания клиента #{clientId}</Title>
+          <Title order={1} ta="center" mb="xl">Назначенные планы питания клиента #{clientId}</Title>
 
           {error && (
             <Alert title="Ошибка" color="red" mb="md">
@@ -164,7 +114,7 @@ export default function ClientNutritionPlansPage() {
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Group justify="space-between" mb="md">
                   <Title order={3}>Назначенные планы</Title>
-                  
+
                   <Link href={`/admin/client/${clientId}/add-nutrition`} passHref>
                     <Button variant="filled">
                       Добавить новый план
@@ -172,34 +122,47 @@ export default function ClientNutritionPlansPage() {
                   </Link>
                 </Group>
 
-                {loading ? (
-                  <Text ta="center" py="xl">Загрузка планов питания...</Text>
-                ) : nutritionPlans.length > 0 ? (
+                <LoadingOverlay visible={loading} overlayProps={{ radius: "sm", blur: 2 }} />
+
+                {!loading && clientNutritionPlans.length > 0 ? (
                   <Stack gap="md">
-                    {nutritionPlans.map(plan => (
+                    {clientNutritionPlans.map(plan => (
                       <Card key={plan.id} shadow="xs" padding="md" radius="sm" withBorder>
                         <Group justify="space-between" mb="sm">
-                          <Title order={4}>{plan.day.name}</Title>
-                          <Badge variant="light" color="blue">
-                            {plan.category.name}
-                          </Badge>
+                          <Title order={4}>{plan.nutritionPlan.name}</Title>
+                          <Group>
+                            <Badge variant="light" color={plan.isActive ? "green" : "red"}>
+                              {plan.isActive ? "Активный" : "Неактивный"}
+                            </Badge>
+                            <ActionIcon
+                              variant="subtle"
+                              color={plan.isActive ? "green" : "red"}
+                              onClick={() => togglePlanStatus(plan.id, !plan.isActive)}
+                              title={plan.isActive ? "Сделать неактивным" : "Сделать активным"}
+                            >
+                              {plan.isActive ? <FiToggleRight size={16} /> : <FiToggleLeft size={16} />}
+                            </ActionIcon>
+                          </Group>
                         </Group>
-                        
+
                         <Text size="sm" c="dimmed" mb="sm">
-                          Подкатегория: {plan.subcategory.name}
+                          Категория: {plan.nutritionPlan.nutritionCategory?.name || 'Категория не указана'}
                         </Text>
-                        
+
                         <Text size="sm" mb="md">
-                          {plan.day.description || 'Описание дня питания отсутствует'}
+                          {plan.nutritionPlan.description || 'Описание плана питания отсутствует'}
                         </Text>
-                        
+
                         <Text size="xs" c="gray">
-                          Назначен: {new Date(plan.assigned_at).toLocaleDateString('ru-RU')}
+                          Назначен: {new Date(plan.assignedAt).toLocaleDateString('ru-RU')}
+                          {plan.updatedAt && plan.updatedAt !== plan.assignedAt && (
+                            <span>, обновлен: {new Date(plan.updatedAt).toLocaleDateString('ru-RU')}</span>
+                          )}
                         </Text>
                       </Card>
                     ))}
                   </Stack>
-                ) : (
+                ) : !loading ? (
                   <Text ta="center" py="xl">
                     У клиента пока нет назначенных планов питания.
                     <br />
@@ -209,8 +172,8 @@ export default function ClientNutritionPlansPage() {
                       </Button>
                     </Link>
                   </Text>
-                )}
-                
+                ) : null}
+
                 <Group justify="center" mt="xl">
                   <Link href={`/admin/client/${clientId}`} passHref>
                     <Button variant="outline" size="lg">

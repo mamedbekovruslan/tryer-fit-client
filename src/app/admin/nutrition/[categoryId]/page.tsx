@@ -19,7 +19,6 @@ import {
   Modal,
   TextInput,
   Textarea,
-  NumberInput,
   ActionIcon,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
@@ -27,7 +26,7 @@ import { FiPlus, FiX, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { useParams, useRouter } from 'next/navigation';
-import { nutritionService, NutritionDay, Meal, CreateMealRequest } from '@/services/nutritionService';
+import { nutritionService, NutritionPlan, CreateNutritionPlanRequest } from '@/services/nutritionService';
 import { useForm } from '@mantine/form';
 
 export default function NutritionCategoryPage() {
@@ -36,21 +35,19 @@ export default function NutritionCategoryPage() {
   const { user } = useAuth();
 
   const categoryId = Number(params.categoryId);
-  const [days, setDays] = useState<NutritionDay[]>([]);
-  const [selectedDay, setSelectedDay] = useState<NutritionDay | null>(null);
-  const [meals, setMeals] = useState<Meal[]>([]);
+  const [plans, setPlans] = useState<NutritionPlan[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<NutritionPlan | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mealsLoading, setMealsLoading] = useState(false);
-  const [addMealModalOpened, setAddMealModalOpened] = useState(false);
-  const [editMealModalOpened, setEditMealModalOpened] = useState(false);
-  const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
+  const [addPlanModalOpened, setAddPlanModalOpened] = useState(false);
+  const [editPlanModalOpened, setEditPlanModalOpened] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<NutritionPlan | null>(null);
 
-  // Форма для добавления/редактирования приема пищи
-  const mealForm = useForm({
+  // Форма для добавления/редактирования плана питания
+  const planForm = useForm({
     initialValues: {
       name: '',
       description: '',
-      nutritionDayId: 0,
+      nutritionCategoryId: categoryId,
     },
     validate: {
       name: (value) => (value.trim().length < 2 ? 'Название должно содержать минимум 2 символа' : null),
@@ -59,30 +56,24 @@ export default function NutritionCategoryPage() {
 
   useEffect(() => {
     if (categoryId) {
-      loadDays();
+      loadPlans();
     }
   }, [categoryId]);
 
-  useEffect(() => {
-    if (selectedDay) {
-      loadMealsForDay(selectedDay.id);
-    }
-  }, [selectedDay]);
-
-  const loadDays = async () => {
+  const loadPlans = async () => {
     try {
       setLoading(true);
-      const data = await nutritionService.getNutritionDaysByCategory(categoryId);
-      setDays(data);
+      const data = await nutritionService.getNutritionPlansByCategory(categoryId);
+      setPlans(data);
 
-      // Устанавливаем первый день как выбранный по умолчанию
+      // Устанавливаем первый план как выбранный по умолчанию
       if (data.length > 0) {
-        setSelectedDay(data[0]);
+        setSelectedPlan(data[0]);
       }
     } catch (error) {
       notifications.show({
         title: 'Ошибка загрузки',
-        message: 'Не удалось загрузить дни питания',
+        message: 'Не удалось загрузить планы питания',
         color: 'red',
       });
     } finally {
@@ -90,153 +81,122 @@ export default function NutritionCategoryPage() {
     }
   };
 
-  const loadMealsForDay = async (dayId: number) => {
-    try {
-      setMealsLoading(true);
-      const data = await nutritionService.getMealsByNutritionDay(dayId);
-      setMeals(data);
-    } catch (error) {
-      notifications.show({
-        title: 'Ошибка загрузки',
-        message: 'Не удалось загрузить приемы пищи',
-        color: 'red',
-      });
-    } finally {
-      setMealsLoading(false);
-    }
+  const handlePlanClick = (plan: NutritionPlan) => {
+    setSelectedPlan(plan);
   };
 
-  const handleDayClick = (day: NutritionDay) => {
-    setSelectedDay(day);
-  };
-
-  const handleAddDay = () => {
-    router.push(`/admin/nutrition/${categoryId}/add-day`);
-  };
-
-  const handleAddMeal = () => {
-    if (selectedDay) {
-      mealForm.setValues({
-        name: '',
-        description: '',
-        nutritionDayId: selectedDay.id,
-      });
-      setAddMealModalOpened(true);
-    } else {
-      notifications.show({
-        title: 'Ошибка',
-        message: 'Выберите день питания для добавления приема пищи',
-        color: 'red',
-      });
-    }
-  };
-
-  const handleDeleteDay = async (dayId: number) => {
-    try {
-      await nutritionService.deleteNutritionDay(dayId);
-      notifications.show({
-        title: 'Успешно',
-        message: 'День питания удален',
-        color: 'green',
-      });
-
-      // Обновляем список дней
-      loadDays();
-
-      // Если удаляемый день был выбран, сбрасываем выбор
-      if (selectedDay && selectedDay.id === dayId) {
-        setSelectedDay(null);
-        setMeals([]); // Очищаем список приемов пищи
-      }
-    } catch (error) {
-      notifications.show({
-        title: 'Ошибка',
-        message: 'Не удалось удалить день питания',
-        color: 'red',
-      });
-    }
-  };
-
-  const handleCreateMeal = async (values: CreateMealRequest) => {
-    try {
-      await nutritionService.createMeal(values);
-      notifications.show({
-        title: 'Успешно',
-        message: 'Прием пищи добавлен',
-        color: 'green',
-      });
-
-      // Обновляем список приемов пищи
-      if (selectedDay) {
-        loadMealsForDay(selectedDay.id);
-      }
-
-      setAddMealModalOpened(false);
-      mealForm.reset();
-    } catch (error) {
-      notifications.show({
-        title: 'Ошибка',
-        message: 'Не удалось добавить прием пищи',
-        color: 'red',
-      });
-    }
-  };
-
-  const handleEditMeal = (meal: Meal) => {
-    setEditingMeal(meal);
-    mealForm.setValues({
-      name: meal.name,
-      description: meal.description || '',
-      nutritionDayId: meal.nutritionDayId,
+  const handleAddPlan = () => {
+    planForm.setValues({
+      name: '',
+      description: '',
+      nutritionCategoryId: categoryId,
     });
-    setEditMealModalOpened(true);
+    setAddPlanModalOpened(true);
   };
 
-  const handleUpdateMeal = async (values: CreateMealRequest) => {
-    if (!editingMeal) return;
+  const handleViewDays = (planId: number) => {
+    router.push(`/admin/nutrition/plans/${planId}/days`);
+  };
 
+  const handleDeletePlan = async (planId: number) => {
     try {
-      await nutritionService.updateMeal(editingMeal.id, values);
+      await nutritionService.deleteNutritionPlan(planId);
       notifications.show({
         title: 'Успешно',
-        message: 'Прием пищи обновлен',
+        message: 'План питания удален',
         color: 'green',
       });
 
-      // Обновляем список приемов пищи
-      if (selectedDay) {
-        loadMealsForDay(selectedDay.id);
-      }
+      // Обновляем список планов
+      loadPlans();
 
-      setEditMealModalOpened(false);
-      setEditingMeal(null);
-      mealForm.reset();
+      // Если удаляемый план был выбран, сбрасываем выбор
+      if (selectedPlan && selectedPlan.id === planId) {
+        setSelectedPlan(null);
+      }
     } catch (error) {
       notifications.show({
         title: 'Ошибка',
-        message: 'Не удалось обновить прием пищи',
+        message: 'Не удалось удалить план питания',
         color: 'red',
       });
     }
   };
 
-  const handleDeleteMeal = async (mealId: number) => {
+  const handleCreatePlan = async (values: CreateNutritionPlanRequest) => {
     try {
-      await nutritionService.deleteMeal(mealId);
+      await nutritionService.createNutritionPlan(values);
       notifications.show({
         title: 'Успешно',
-        message: 'Прием пищи удален',
+        message: 'План питания добавлен',
         color: 'green',
       });
 
-      // Обновляем список приемов пищи
-      if (selectedDay) {
-        loadMealsForDay(selectedDay.id);
-      }
+      // Обновляем список планов
+      loadPlans();
+
+      setAddPlanModalOpened(false);
+      planForm.reset();
     } catch (error) {
       notifications.show({
         title: 'Ошибка',
-        message: 'Не удалось удалить прием пищи',
+        message: 'Не удалось добавить план питания',
+        color: 'red',
+      });
+    }
+  };
+
+  const handleEditPlan = (plan: NutritionPlan) => {
+    setEditingPlan(plan);
+    planForm.setValues({
+      name: plan.name,
+      description: plan.description || '',
+      nutritionCategoryId: plan.nutritionCategoryId,
+    });
+    setEditPlanModalOpened(true);
+  };
+
+  const handleUpdatePlan = async (values: CreateNutritionPlanRequest) => {
+    if (!editingPlan) return;
+
+    try {
+      await nutritionService.updateNutritionPlan(editingPlan.id, values);
+      notifications.show({
+        title: 'Успешно',
+        message: 'План питания обновлен',
+        color: 'green',
+      });
+
+      // Обновляем список планов
+      loadPlans();
+
+      setEditPlanModalOpened(false);
+      setEditingPlan(null);
+      planForm.reset();
+    } catch (error) {
+      notifications.show({
+        title: 'Ошибка',
+        message: 'Не удалось обновить план питания',
+        color: 'red',
+      });
+    }
+  };
+
+  const handleDeleteMeal = async (planId: number) => {
+    try {
+      await nutritionService.deleteNutritionPlan(planId);
+      notifications.show({
+        title: 'Успешно',
+        message: 'План питания удален',
+        color: 'green',
+      });
+
+      // Обновляем список планов
+      loadPlans();
+    } catch (error) {
+      notifications.show({
+        title: 'Ошибка',
+        message: 'Не удалось удалить план питания',
         color: 'red',
       });
     }
@@ -261,147 +221,120 @@ export default function NutritionCategoryPage() {
           <LoadingOverlay visible={loading} overlayProps={{ radius: 'sm', blur: 2 }} />
 
           <Flex justify="space-between" align="center" mb="xl">
-            <Title order={1}>Дни питания</Title>
+            <Title order={1}>Планы питания</Title>
             <Button
               leftSection={<FiPlus size={16} />}
-              onClick={handleAddDay}
+              onClick={handleAddPlan}
               size="lg"
             >
-              Добавить день
+              Добавить план
             </Button>
           </Flex>
 
           <Grid gutter="xl">
-            {/* Левая колонка - список дней */}
+            {/* Левая колонка - список планов */}
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
-                <Title order={3} mb="md">Дни питания</Title>
+                <Title order={3} mb="md">Планы питания</Title>
 
                 <ScrollArea h={400} offsetScrollbars>
                   <Stack gap="sm">
-                    {days.map(day => (
+                    {plans.map(plan => (
                       <Card
-                        key={day.id}
+                        key={plan.id}
                         shadow="xs"
                         padding="md"
                         radius="sm"
                         withBorder
                         style={{
                           cursor: 'pointer',
-                          backgroundColor: selectedDay?.id === day.id ? '#f0f7ff' : 'inherit'
+                          backgroundColor: selectedPlan?.id === plan.id ? '#f0f7ff' : 'inherit'
                         }}
-                        onClick={() => handleDayClick(day)}
+                        onClick={() => handlePlanClick(plan)}
                       >
                         <Flex justify="space-between" align="center">
                           <div>
-                            <Text fw={500}>{day.name}</Text>
+                            <Text fw={500}>{plan.name}</Text>
                             <Text size="sm" c="dimmed" mt="xs">
-                              Создан: {new Date(day.createdAt).toLocaleDateString()}
+                              Создан: {new Date(plan.createdAt).toLocaleDateString()}
                             </Text>
                           </div>
-                          <ActionIcon
-                            variant="subtle"
-                            color="red"
-                            onClick={(e) => {
-                              e.stopPropagation(); // Останавливаем всплытие события, чтобы не срабатывал onClick карточки
-                              handleDeleteDay(day.id);
-                            }}
-                            aria-label="Удалить день"
-                          >
-                            <FiTrash2 size={16} />
-                          </ActionIcon>
+                          <Group>
+                            <ActionIcon
+                              variant="subtle"
+                              color="blue"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditPlan(plan);
+                              }}
+                              aria-label="Редактировать план"
+                            >
+                              <FiEdit2 size={16} />
+                            </ActionIcon>
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Останавливаем всплытие события, чтобы не срабатывал onClick карточки
+                                handleDeletePlan(plan.id);
+                              }}
+                              aria-label="Удалить план"
+                            >
+                              <FiTrash2 size={16} />
+                            </ActionIcon>
+                          </Group>
                         </Flex>
                       </Card>
                     ))}
                   </Stack>
                 </ScrollArea>
 
-                {days.length === 0 && !loading && (
+                {plans.length === 0 && !loading && (
                   <Text c="dimmed" ta="center" mt="lg">
-                    Дни питания отсутствуют
+                    Планы питания отсутствуют
                   </Text>
                 )}
               </Card>
             </Grid.Col>
 
-            {/* Правая колонка - детали выбранного дня */}
+            {/* Правая колонка - детали выбранного плана */}
             <Grid.Col span={{ base: 12, md: 8 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
-                {selectedDay ? (
+                {selectedPlan ? (
                   <>
                     <Flex justify="space-between" align="center" mb="md">
-                      <Title order={2}>{selectedDay.name}</Title>
-                      <Badge variant="outline">Создан: {new Date(selectedDay.createdAt).toLocaleDateString()}</Badge>
+                      <Title order={2}>{selectedPlan.name}</Title>
+                      <Badge variant="outline">Создан: {new Date(selectedPlan.createdAt).toLocaleDateString()}</Badge>
                     </Flex>
 
                     <Divider mb="md" />
 
-                    {selectedDay.description && (
+                    {selectedPlan.description && (
                       <Paper p="md" withBorder mb="md">
-                        <Text size="lg">{selectedDay.description}</Text>
+                        <Text size="lg">{selectedPlan.description}</Text>
                       </Paper>
                     )}
 
-                    <Stack gap="md">
-                      <Card shadow="none" padding="md" radius="sm" withBorder>
-                        <Flex justify="space-between" align="center" mb="md">
-                          <Title order={4}>Приемы пищи</Title>
-                          <Button
-                            leftSection={<FiPlus size={16} />}
-                            onClick={handleAddMeal}
-                            variant="outline"
-                          >
-                            Добавить прием пищи
-                          </Button>
-                        </Flex>
-
-                        <LoadingOverlay visible={mealsLoading} overlayProps={{ radius: 'sm', blur: 2 }} />
-
-                        {meals.length > 0 ? (
-                          <Stack gap="sm">
-                            {meals.map(meal => (
-                              <Card key={meal.id} shadow="xs" padding="md" radius="sm" withBorder>
-                                <Flex justify="space-between" align="center">
-                                  <Text fw={500}>{meal.name}</Text>
-                                  <Group>
-                                    <ActionIcon
-                                      variant="subtle"
-                                      color="blue"
-                                      onClick={() => handleEditMeal(meal)}
-                                      aria-label="Редактировать"
-                                    >
-                                      <FiEdit2 size={16} />
-                                    </ActionIcon>
-                                    <ActionIcon
-                                      variant="subtle"
-                                      color="red"
-                                      onClick={() => handleDeleteMeal(meal.id)}
-                                      aria-label="Удалить"
-                                    >
-                                      <FiTrash2 size={16} />
-                                    </ActionIcon>
-                                  </Group>
-                                </Flex>
-
-                                {meal.description && (
-                                  <Text size="sm" c="dimmed" mt="xs">
-                                    {meal.description}
-                                  </Text>
-                                )}
-                              </Card>
-                            ))}
-                          </Stack>
-                        ) : !mealsLoading ? (
-                          <Text c="dimmed" ta="center" mt="md">
-                            Приемы пищи отсутствуют
-                          </Text>
-                        ) : null}
-                      </Card>
-                    </Stack>
+                    <Card shadow="none" padding="md" radius="sm" withBorder>
+                      <Flex justify="space-between" align="center" mb="md">
+                        <Title order={4}>Дни питания</Title>
+                        <Button
+                          leftSection={<FiPlus size={16} />}
+                          onClick={() => handleViewDays(selectedPlan.id)}
+                          variant="outline"
+                        >
+                          Управление днями
+                        </Button>
+                      </Flex>
+                      
+                      <Text size="sm" c="dimmed">
+                        Перейдите на страницу управления днями для добавления/редактирования дней питания в этом плане
+                      </Text>
+                    </Card>
                   </>
                 ) : !loading ? (
                   <Text c="dimmed" ta="center">
-                    Выберите день из списка для просмотра деталей
+                    Выберите план из списка для просмотра деталей
                   </Text>
                 ) : null}
               </Card>
@@ -409,72 +342,75 @@ export default function NutritionCategoryPage() {
           </Grid>
         </Paper>
 
-        {/* Модальное окно для добавления приема пищи */}
+        {/* Модальное окно для добавления плана питания */}
         <Modal
-          opened={addMealModalOpened}
-          onClose={() => setAddMealModalOpened(false)}
-          title="Добавить прием пищи"
+          opened={addPlanModalOpened}
+          onClose={() => setAddPlanModalOpened(false)}
+          title="Добавить план питания"
           size="lg"
         >
-          <form onSubmit={mealForm.onSubmit(handleCreateMeal)}>
+          <form onSubmit={planForm.onSubmit(handleCreatePlan)}>
             <Stack>
               <TextInput
-                label="Название приема пищи"
-                placeholder="Например: Завтрак"
-                {...mealForm.getInputProps('name')}
+                label="Название плана питания"
+                placeholder="Например: Интенсивное похудение"
+                {...planForm.getInputProps('name')}
               />
 
               <Textarea
                 label="Описание"
-                placeholder="Дополнительная информация о приеме пищи"
-                {...mealForm.getInputProps('description')}
+                placeholder="Дополнительная информация о плане питания"
+                {...planForm.getInputProps('description')}
               />
 
+              <input type="hidden" {...planForm.getInputProps('nutritionCategoryId')} />
 
               <Group justify="right" mt="md">
                 <Button
                   variant="outline"
-                  onClick={() => setAddMealModalOpened(false)}
+                  onClick={() => setAddPlanModalOpened(false)}
                   leftSection={<FiX size={16} />}
                 >
                   Отмена
                 </Button>
-                <Button type="submit">Добавить прием пищи</Button>
+                <Button type="submit">Добавить план питания</Button>
               </Group>
             </Stack>
           </form>
         </Modal>
 
-        {/* Модальное окно для редактирования приема пищи */}
+        {/* Модальное окно для редактирования плана питания */}
         <Modal
-          opened={editMealModalOpened}
+          opened={editPlanModalOpened}
           onClose={() => {
-            setEditMealModalOpened(false);
-            setEditingMeal(null);
+            setEditPlanModalOpened(false);
+            setEditingPlan(null);
           }}
-          title="Редактировать прием пищи"
+          title="Редактировать план питания"
           size="lg"
         >
-          <form onSubmit={mealForm.onSubmit(handleUpdateMeal)}>
+          <form onSubmit={planForm.onSubmit(handleUpdatePlan)}>
             <Stack>
               <TextInput
-                label="Название приема пищи"
-                placeholder="Например: Завтрак"
-                {...mealForm.getInputProps('name')}
+                label="Название плана питания"
+                placeholder="Например: Интенсивное похудение"
+                {...planForm.getInputProps('name')}
               />
 
               <Textarea
                 label="Описание"
-                placeholder="Дополнительная информация о приеме пищи"
-                {...mealForm.getInputProps('description')}
+                placeholder="Дополнительная информация о плане питания"
+                {...planForm.getInputProps('description')}
               />
+
+              <input type="hidden" {...planForm.getInputProps('nutritionCategoryId')} />
 
               <Group justify="right" mt="md">
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setEditMealModalOpened(false);
-                    setEditingMeal(null);
+                    setEditPlanModalOpened(false);
+                    setEditingPlan(null);
                   }}
                   leftSection={<FiX size={16} />}
                 >

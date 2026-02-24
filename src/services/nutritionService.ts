@@ -24,6 +24,7 @@ export interface NutritionPlan {
   nutritionCategoryId: number;
   createdAt: Date;
   updatedAt: Date;
+  nutritionCategory?: NutritionCategory;
 }
 
 export interface Meal {
@@ -363,6 +364,60 @@ export const nutritionService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching active client nutrition plans:', error);
+      throw error;
+    }
+  },
+
+  assignNutritionPlanToClient: async (clientId: number, planId: number): Promise<ClientNutritionPlan> => {
+    try {
+      const response = await apiClient.post<ClientNutritionPlan>(
+        `/client-nutrition-plans`,
+        {
+          clientId: clientId,
+          nutritionPlanId: planId,
+          isActive: true // По умолчанию активный
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning nutrition plan to client:', error);
+      throw error;
+    }
+  },
+
+  getNutritionPlansByTrainer: async (trainerId: number): Promise<NutritionPlan[]> => {
+    try {
+      const response = await apiClient.get<NutritionPlan[]>(
+        `/nutrition-plans/trainer/${trainerId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching nutrition plans by trainer:', error);
+      throw error;
+    }
+  },
+
+  getNutritionDaysByPlanForTrainer: async (planId: number): Promise<NutritionDay[]> => {
+    try {
+      const response = await apiClient.get<NutritionDay[]>(
+        `/nutrition-days/plan/${planId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching nutrition days for trainer:', error);
+      throw error;
+    }
+  },
+
+  updateClientNutritionPlan: async (id: number, data: Partial<{ isActive: boolean }>): Promise<ClientNutritionPlan> => {
+    try {
+      const response = await apiClient.put<ClientNutritionPlan>(
+        `/client-nutrition-plans/${id}`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating client nutrition plan:', error);
       throw error;
     }
   },

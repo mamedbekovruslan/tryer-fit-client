@@ -1,47 +1,34 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Container, 
-  Title, 
-  Text, 
-  Paper, 
-  Stack, 
-  Card, 
-  Grid, 
-  Button, 
-  Flex, 
-  Badge, 
+import {
+  Container,
+  Title,
+  Text,
+  Paper,
+  Stack,
+  Card,
+  Grid,
+  Button,
+  Flex,
+  Badge,
   Select,
   Checkbox,
   Pagination,
   Modal,
   TextInput,
   Box,
-  Group
+  Group,
+  LoadingOverlay
 } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { clientService, Client } from '@/services/clientService';
 
 // Типы данных
-interface Client {
-  id: number;
-  username: string;
-  email: string;
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  age?: number;
-  experience?: string;
-  contraindications?: string;
-  desired_result?: string;
-  current_diet?: string;
-  // другие поля клиента
-}
-
 interface Report {
   id: number;
   client_id: number;
@@ -87,115 +74,114 @@ export default function ClientProfilePage() {
   const [addCommentModalOpen, setAddCommentModalOpen] = useState(false);
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [loading, setLoading] = useState(true);
-
-  // Моковые данные для демонстрации
-  const mockClient: Client = {
-    id: Number(id),
-    username: 'client' + id,
-    email: 'client' + id + '@example.com',
-    first_name: 'Иван',
-    last_name: 'Иванов',
-    phone: '+7 (999) 123-45-67',
-    age: 30,
-    experience: 'Новичок',
-    contraindications: 'Аллергия на молочные продукты',
-    desired_result: 'Похудение на 10 кг',
-    current_diet: 'Белковая диета'
-  };
-
-  const mockReports: Report[] = [
-    {
-      id: 1,
-      client_id: Number(id),
-      date: '2024-12-01',
-      photo_url: 'https://placehold.co/300x300?text=Фото+отчета',
-      comment: 'Хороший прогресс!'
-    },
-    {
-      id: 2,
-      client_id: Number(id),
-      date: '2024-12-15',
-      photo_url: 'https://placehold.co/300x300?text=Фото+отчета',
-      comment: 'Продолжайте в том же духе'
-    },
-    {
-      id: 3,
-      client_id: Number(id),
-      date: '2025-01-01',
-      photo_url: 'https://placehold.co/300x300?text=Фото+отчета',
-      comment: 'Отличные результаты!'
-    }
-  ];
-
-  const mockComments: Comment[] = [
-    {
-      id: 1,
-      report_id: 1,
-      trainer_id: 1,
-      comment: 'Отличный старт! Продолжайте в том же духе.',
-      created_at: '2024-12-02T10:30:00Z',
-      trainer_name: 'Алексей Петров'
-    },
-    {
-      id: 2,
-      report_id: 1,
-      trainer_id: 1,
-      comment: 'Обратите внимание на питание.',
-      created_at: '2024-12-03T14:15:00Z',
-      trainer_name: 'Алексей Петров'
-    },
-    {
-      id: 3,
-      report_id: 2,
-      trainer_id: 1,
-      comment: 'Прогресс заметен!',
-      created_at: '2024-12-16T09:45:00Z',
-      trainer_name: 'Алексей Петров'
-    },
-    {
-      id: 4,
-      report_id: 2,
-      trainer_id: 1,
-      comment: 'Увеличьте нагрузку на ноги.',
-      created_at: '2024-12-17T11:20:00Z',
-      trainer_name: 'Алексей Петров'
-    },
-    {
-      id: 5,
-      report_id: 3,
-      trainer_id: 1,
-      comment: 'Отличные результаты!',
-      created_at: '2025-01-02T16:30:00Z',
-      trainer_name: 'Алексей Петров'
-    },
-    {
-      id: 6,
-      report_id: 3,
-      trainer_id: 1,
-      comment: 'Продолжайте работать над питанием.',
-      created_at: '2025-01-03T12:10:00Z',
-      trainer_name: 'Алексей Петров'
-    }
-  ];
-
-  const mockProgressData: ProgressData[] = [
-    { date: '2024-11-01', weight: 85, measurements: { chest: 100, waist: 90, hips: 105 } },
-    { date: '2024-12-01', weight: 82, measurements: { chest: 98, waist: 88, hips: 103 } },
-    { date: '2025-01-01', weight: 79, measurements: { chest: 96, waist: 86, hips: 101 } }
-  ];
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Загружаем данные клиента
     const loadClientData = async () => {
-      // В реальной реализации здесь будет вызов API
-      setClient(mockClient);
-      setReports(mockReports);
-      setComments(mockComments);
-      setProgressData(mockProgressData);
-      setLoading(false);
+      try {
+        setLoading(true);
+        // Загружаем информацию о клиенте из базы данных
+        const clientData = await clientService.getClientById(Number(id));
+        setClient(clientData);
+
+        // Временно используем моковые данные для отчетов и прогресса
+        // В реальной реализации эти данные будут получаться из соответствующих сервисов
+        const mockReports: Report[] = [
+          {
+            id: 1,
+            client_id: Number(id),
+            date: '2024-12-01',
+            photo_url: 'https://placehold.co/300x300?text=Фото+отчета',
+            comment: 'Хороший прогресс!'
+          },
+          {
+            id: 2,
+            client_id: Number(id),
+            date: '2024-12-15',
+            photo_url: 'https://placehold.co/300x300?text=Фото+отчета',
+            comment: 'Продолжайте в том же духе'
+          },
+          {
+            id: 3,
+            client_id: Number(id),
+            date: '2025-01-01',
+            photo_url: 'https://placehold.co/300x300?text=Фото+отчета',
+            comment: 'Отличные результаты!'
+          }
+        ];
+
+        const mockComments: Comment[] = [
+          {
+            id: 1,
+            report_id: 1,
+            trainer_id: 1,
+            comment: 'Отличный старт! Продолжайте в том же духе.',
+            created_at: '2024-12-02T10:30:00Z',
+            trainer_name: 'Алексей Петров'
+          },
+          {
+            id: 2,
+            report_id: 1,
+            trainer_id: 1,
+            comment: 'Обратите внимание на питание.',
+            created_at: '2024-12-03T14:15:00Z',
+            trainer_name: 'Алексей Петров'
+          },
+          {
+            id: 3,
+            report_id: 2,
+            trainer_id: 1,
+            comment: 'Прогресс заметен!',
+            created_at: '2024-12-16T09:45:00Z',
+            trainer_name: 'Алексей Петров'
+          },
+          {
+            id: 4,
+            report_id: 2,
+            trainer_id: 1,
+            comment: 'Увеличьте нагрузку на ноги.',
+            created_at: '2024-12-17T11:20:00Z',
+            trainer_name: 'Алексей Петров'
+          },
+          {
+            id: 5,
+            report_id: 3,
+            trainer_id: 1,
+            comment: 'Отличные результаты!',
+            created_at: '2025-01-02T16:30:00Z',
+            trainer_name: 'Алексей Петров'
+          },
+          {
+            id: 6,
+            report_id: 3,
+            trainer_id: 1,
+            comment: 'Продолжайте работать над питанием.',
+            created_at: '2025-01-03T12:10:00Z',
+            trainer_name: 'Алексей Петров'
+          }
+        ];
+
+        const mockProgressData: ProgressData[] = [
+          { date: '2024-11-01', weight: 85, measurements: { chest: 100, waist: 90, hips: 105 } },
+          { date: '2024-12-01', weight: 82, measurements: { chest: 98, waist: 88, hips: 103 } },
+          { date: '2025-01-01', weight: 79, measurements: { chest: 96, waist: 86, hips: 101 } }
+        ];
+
+        setReports(mockReports);
+        setComments(mockComments);
+        setProgressData(mockProgressData);
+      } catch (err) {
+        setError('Ошибка загрузки данных клиента: ' + (err as Error).message);
+        console.error('Error loading client data:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    loadClientData();
+    if (id) {
+      loadClientData();
+    }
   }, [id]);
 
   const handleAddComment = () => {
@@ -209,7 +195,7 @@ export default function ClientProfilePage() {
         created_at: new Date().toISOString(),
         trainer_name: 'Алексей Петров'
       };
-      
+
       setComments([...comments, newComment]);
       setCommentText('');
       setAddCommentModalOpen(false);
@@ -241,6 +227,7 @@ export default function ClientProfilePage() {
       <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
         <Container size="lg" py="xl">
           <Paper shadow="md" p="xl" radius="md">
+            <LoadingOverlay visible={true} overlayProps={{ radius: "sm", blur: 2 }} />
             <Text ta="center">Загрузка данных клиента...</Text>
           </Paper>
         </Container>
@@ -266,6 +253,10 @@ export default function ClientProfilePage() {
         <Paper shadow="md" p="xl" radius="md">
           <Title order={1} ta="center" mb="xl">Профиль клиента: {client.first_name} {client.last_name}</Title>
 
+          {error && (
+            <Text c="red" mb="md">{error}</Text>
+          )}
+
           <Grid gutter="xl">
             {/* Информация о клиенте */}
             <Grid.Col span={{ base: 12, md: 4 }}>
@@ -274,33 +265,38 @@ export default function ClientProfilePage() {
                   <Title order={3} ta="center">Информация о клиенте</Title>
 
                   <div>
+                    <Text size="sm" c="dimmed">Имя пользователя</Text>
+                    <Text fw={500}>{client.username}</Text>
+                  </div>
+
+                  <div>
+                    <Text size="sm" c="dimmed">Email</Text>
+                    <Text fw={500}>{client.email}</Text>
+                  </div>
+
+                  <div>
                     <Text size="sm" c="dimmed">Имя</Text>
-                    <Text fw={500}>{client.first_name} {client.last_name}</Text>
+                    <Text fw={500}>{client.first_name || 'Не указано'}</Text>
                   </div>
 
                   <div>
-                    <Text size="sm" c="dimmed">Телефон</Text>
-                    <Text fw={500}>{client.phone || 'Не указан'}</Text>
+                    <Text size="sm" c="dimmed">Фамилия</Text>
+                    <Text fw={500}>{client.last_name || 'Не указано'}</Text>
                   </div>
 
                   <div>
-                    <Text size="sm" c="dimmed">Возраст</Text>
-                    <Text fw={500}>{client.age || 'Не указан'}</Text>
+                    <Text size="sm" c="dimmed">Цель в фитнесе</Text>
+                    <Text fw={500}>{client.fitness_goal || 'Не указана'}</Text>
                   </div>
 
                   <div>
-                    <Text size="sm" c="dimmed">Опыт</Text>
-                    <Text fw={500}>{client.experience || 'Не указан'}</Text>
+                    <Text size="sm" c="dimmed">Ожидаемый результат</Text>
+                    <Text fw={500}>{client.expected_result || 'Не указан'}</Text>
                   </div>
 
                   <div>
                     <Text size="sm" c="dimmed">Противопоказания</Text>
                     <Text fw={500}>{client.contraindications || 'Нет'}</Text>
-                  </div>
-
-                  <div>
-                    <Text size="sm" c="dimmed">Желаемый результат</Text>
-                    <Text fw={500}>{client.desired_result || 'Не указан'}</Text>
                   </div>
 
                   <div>
@@ -332,16 +328,16 @@ export default function ClientProfilePage() {
                   {reports.length > 0 ? (
                     <div>
                       <Text mb="sm">Дата: {reports[0].date}</Text>
-                      <img 
-                        src={reports[0].photo_url || 'https://placehold.co/300x300?text=Фото+отсутствует'} 
-                        alt="Отчет клиента" 
+                      <img
+                        src={reports[0].photo_url || 'https://placehold.co/300x300?text=Фото+отсутствует'}
+                        alt="Отчет клиента"
                         style={{ width: '100%', maxWidth: '300px', borderRadius: '8px' }}
                       />
                       <Text mt="sm">{reports[0].comment || 'Комментарий отсутствует'}</Text>
-                      
-                      <Button 
-                        variant="outline" 
-                        mt="md" 
+
+                      <Button
+                        variant="outline"
+                        mt="md"
                         onClick={() => {
                           setReportIdForComment(reports[0].id);
                           setAddCommentModalOpen(true);
@@ -359,7 +355,7 @@ export default function ClientProfilePage() {
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Flex justify="space-between" align="flex-start" mb="md">
                     <Title order={3}>Прогресс</Title>
-                    
+
                     <Stack gap="xs">
                       <Select
                         label="Период"
@@ -372,7 +368,7 @@ export default function ClientProfilePage() {
                         onChange={(value) => setSelectedPeriod(value as any)}
                         w={200}
                       />
-                      
+
                       {selectedPeriod === 'custom' && (
                         <Group>
                           <TextInput
@@ -391,7 +387,7 @@ export default function ClientProfilePage() {
                       )}
                     </Stack>
                   </Flex>
-                  
+
                   <Box h={300} mb="md">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
@@ -423,7 +419,7 @@ export default function ClientProfilePage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </Box>
-                  
+
                   <div>
                     <Text mb="sm">Выберите параметры для отображения:</Text>
                     <Group>
@@ -455,7 +451,7 @@ export default function ClientProfilePage() {
                 {/* Комментарии к отчетам */}
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Title order={3} mb="md">Комментарии к отчету</Title>
-                  
+
                   <Stack gap="sm">
                     {paginatedComments.length > 0 ? (
                       paginatedComments.map(comment => (
@@ -475,7 +471,7 @@ export default function ClientProfilePage() {
                       <Text>Комментариев пока нет</Text>
                     )}
                   </Stack>
-                  
+
                   {totalPages > 1 && (
                     <Flex justify="center" mt="md">
                       <Pagination
@@ -510,9 +506,9 @@ export default function ClientProfilePage() {
           multiline
           rows={4}
         />
-        <Button 
-          onClick={handleAddComment} 
-          fullWidth 
+        <Button
+          onClick={handleAddComment}
+          fullWidth
           mt="md"
           disabled={!commentText.trim()}
         >

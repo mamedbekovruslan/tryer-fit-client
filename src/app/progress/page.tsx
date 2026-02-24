@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Box, Card, Button, Group, Select, Checkbox, Pagination, DatePickerInput } from '@mantine/core';
+import { Container, Title, Text, Paper, Box, Card, Button, Group, Select, Checkbox, Pagination, LoadingOverlay } from '@mantine/core';
 import { DatePicker } from '@mantine/dates';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
+import { progressReportService, ProgressReport } from '@/services/progressReportService';
 
 // Типы данных
 interface ProgressDataPoint {
@@ -28,31 +29,6 @@ interface Comment {
   text: string;
 }
 
-// Моковые данные
-const mockProgressData: ProgressDataPoint[] = [
-  { date: '2024-01-01', weight: 80, bodyFat: 20, muscleMass: 35, measurements: { chest: 100, waist: 85, hips: 95, arms: 35, thighs: 55 } },
-  { date: '2024-01-15', weight: 79.5, bodyFat: 19.5, muscleMass: 35.2, measurements: { chest: 100.5, waist: 84, hips: 94.5, arms: 35.2, thighs: 54.8 } },
-  { date: '2024-02-01', weight: 79, bodyFat: 19, muscleMass: 35.5, measurements: { chest: 101, waist: 83.5, hips: 94, arms: 35.5, thighs: 54.5 } },
-  { date: '2024-02-15', weight: 78.5, bodyFat: 18.5, muscleMass: 35.8, measurements: { chest: 101.5, waist: 83, hips: 93.5, arms: 35.8, thighs: 54.2 } },
-  { date: '2024-03-01', weight: 78, bodyFat: 18, muscleMass: 36, measurements: { chest: 102, waist: 82.5, hips: 93, arms: 36, thighs: 54 } },
-  { date: '2024-03-15', weight: 77.5, bodyFat: 17.5, muscleMass: 36.3, measurements: { chest: 102.5, waist: 82, hips: 92.5, arms: 36.3, thighs: 53.8 } },
-  { date: '2024-04-01', weight: 77, bodyFat: 17, muscleMass: 36.5, measurements: { chest: 103, waist: 81.5, hips: 92, arms: 36.5, thighs: 53.5 } },
-];
-
-const mockComments: Comment[] = [
-  { id: 1, date: '2024-01-10', text: 'Отличный старт! Вес снижается, как и планировалось.' },
-  { id: 2, date: '2024-01-25', text: 'Продолжайте в том же духе. Обратите внимание на питание.' },
-  { id: 3, date: '2024-02-10', text: 'Хороший прогресс по снижению процента жира.' },
-  { id: 4, date: '2024-02-25', text: 'Рекомендую увеличить нагрузку на ноги.' },
-  { id: 5, date: '2024-03-10', text: 'Отличные результаты! Продолжайте работать над мышечной массой.' },
-  { id: 6, date: '2024-03-25', text: 'Небольшая задержка воды, но в целом все хорошо.' },
-  { id: 7, date: '2024-04-10', text: 'Отличный прогресс за последний месяц!' },
-  { id: 8, date: '2024-04-15', text: 'Рекомендую немного изменить программу тренировок.' },
-  { id: 9, date: '2024-04-20', text: 'Отличные результаты на фото.' },
-  { id: 10, date: '2024-04-25', text: 'Продолжайте в том же духе перед соревнованиями.' },
-  { id: 11, date: '2024-05-01', text: 'Отличные результаты за последний месяц!' },
-];
-
 export default function ProgressPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -66,11 +42,30 @@ export default function ProgressPage() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [commentsPerPage] = useState(10);
-  
+  const [progressData, setProgressData] = useState<ProgressReport[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Загрузка данных прогресса
+  useEffect(() => {
+    const fetchProgressData = async () => {
+      try {
+        setLoading(true);
+        const data = await progressReportService.getAllProgressReports();
+        setProgressData(data);
+      } catch (error) {
+        console.error('Error fetching progress data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProgressData();
+  }, []);
+
   // Фильтрация данных в зависимости от выбранного временного диапазона
-  const filteredData = mockProgressData.filter(point => {
+  const filteredData = progressData.filter(point => {
     const pointDate = new Date(point.date);
-    
+
     if (timeRange === 'month') {
       const monthAgo = new Date();
       monthAgo.setMonth(monthAgo.getMonth() - 1);
@@ -82,15 +77,24 @@ export default function ProgressPage() {
     } else if (timeRange === 'custom' && customDateRange[0] && customDateRange[1]) {
       return pointDate >= customDateRange[0] && pointDate <= customDateRange[1];
     }
-    
+
     return true;
   });
 
-  // Фильтрация комментариев для пагинации
-  const indexOfLastComment = currentPage * commentsPerPage;
-  const indexOfFirstComment = indexOfLastComment - commentsPerPage;
-  const currentComments = mockComments.slice(indexOfFirstComment, indexOfLastComment);
-  const totalPages = Math.ceil(mockComments.length / commentsPerPage);
+  // Преобразование данных для графика
+  const chartData = filteredData.map(item => ({
+    date: new Date(item.date).toISOString().split('T')[0], // Преобразуем дату в строку формата YYYY-MM-DD
+    weight: item.weight || 0,
+    bodyFat: item.bodyFat || 0,
+    muscleMass: item.muscleMass || 0,
+    measurements: {
+      chest: item.chest || 0,
+      waist: item.waist || 0,
+      hips: item.hips || 0,
+      arms: item.arms || 0,
+      thighs: item.thighs || 0,
+    }
+  }));
 
   // Обработчики изменений
   const handleTimeRangeChange = (value: string | null) => {
@@ -109,6 +113,7 @@ export default function ProgressPage() {
   return (
     <Container size="lg" py="xl">
       <Paper shadow="md" p="xl" radius="md">
+        <LoadingOverlay visible={loading} overlayBlur={2} />
         <Title order={2} mb="lg">Прогресс</Title>
 
         <Group mb="lg" grow>
@@ -161,7 +166,7 @@ export default function ProgressPage() {
         <Paper shadow="sm" p="md" mb="lg">
           <ResponsiveContainer width="100%" height={400}>
             <LineChart
-              data={filteredData}
+              data={chartData}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
@@ -178,22 +183,15 @@ export default function ProgressPage() {
 
         <Title order={3} mb="md">Комментарии тренера</Title>
 
-        {currentComments.map(comment => (
-          <Card key={comment.id} shadow="sm" padding="lg" radius="md" withBorder mb="md">
-            <Text size="sm" c="dimmed">{comment.date}</Text>
-            <Text>{comment.text}</Text>
-          </Card>
-        ))}
-
-        {totalPages > 1 && (
-          <Pagination
-            total={totalPages}
-            page={currentPage}
-            onChange={setCurrentPage}
-            mt="md"
-            justify="center"
-          />
-        )}
+        {progressData
+          .filter(report => report.notes) // Фильтруем только отчеты с комментариями
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Сортируем по дате (новые первыми)
+          .map(report => (
+            <Card key={report.id} shadow="sm" padding="lg" radius="md" withBorder mb="md">
+              <Text size="sm" c="dimmed">{new Date(report.date).toLocaleDateString()}</Text>
+              <Text>{report.notes}</Text>
+            </Card>
+          ))}
 
         <Group mt="xl">
           <Button onClick={() => router.push('/me/progress/new-report')} variant="outline">

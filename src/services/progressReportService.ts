@@ -16,7 +16,11 @@ export interface ProgressReport {
   photoUrls?: string[];
   createdAt: Date;
   updatedAt: Date;
-  clientId: number;
+  client: {
+    id: number;
+    username: string;
+    email: string;
+  };
 }
 
 export interface CreateProgressReportRequest {
