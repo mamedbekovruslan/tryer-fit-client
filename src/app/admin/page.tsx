@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Grid, Button, TextInput, NumberInput, Select } from '@mantine/core';
+import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Grid, Button, TextInput, NumberInput, Select, Group } from '@mantine/core';
 import { FiPlus, FiX } from 'react-icons/fi';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
@@ -240,7 +240,17 @@ export default function AdminPage() {
     <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
       <Container size="lg" py="xl">
         <Paper shadow="md" p="xl" radius="md">
-          <Title order={1} ta="center" mb="xl">Панель управления тренера</Title>
+          <Group justify="space-between" mb="xl">
+            <Title order={1}>Панель управления тренера</Title>
+            <Group>
+              <Button component={Link} href="/admin/nutrition" variant="outline">
+                Питание
+              </Button>
+              <Button component={Link} href="/trainer/workout" variant="outline">
+                Тренировки
+              </Button>
+            </Group>
+          </Group>
 
           <Grid gutter="xl">
             <Grid.Col span={{ base: 12, md: 4 }}>

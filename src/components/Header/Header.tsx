@@ -31,10 +31,22 @@ export const HeaderContent = () => {
             Питание
           </Anchor>
         )}
+        {/* Показываем ссылку "Тренировки" для клиентов */}
+        {user?.user_type === 'client' && (
+          <Anchor component={Link} href="/workout" fw={500} c="white">
+            Тренировки
+          </Anchor>
+        )}
         {/* Показываем ссылку "Питание" только для тренеров */}
         {user?.user_type === 'trainer' && (
           <Anchor component={Link} href="/admin/nutrition" fw={500} c="white">
             Питание
+          </Anchor>
+        )}
+        {/* Показываем ссылку "Тренировки" только для тренеров */}
+        {user?.user_type === 'trainer' && (
+          <Anchor component={Link} href="/trainer/workout" fw={500} c="white">
+            Тренировки
           </Anchor>
         )}
       </Group>
