@@ -1,208 +1,198 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Container, Title, Paper, Stack, Text, TextInput, Button, Group, Avatar, ScrollArea } from '@mantine/core';
-import { useAuth } from '@/providers/AuthProvider';
-import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Client } from '@/services/clientService';
+import { useEffect, useState, useMemo } from 'react';
+import { Box, Text, Center, Loader, Stack, Avatar } from '@mantine/core';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { chatService, ChatUser } from '@/services/chatService';
+import { ClientList } from '@/components/chat/ClientList';
+import { ChatWindow } from '@/components/chat/ChatWindow';
 
-// Типы данных для сообщений
-interface Message {
+interface CurrentUser {
   id: number;
-  sender_id: number;
-  receiver_id: number;
-  message: string;
-  timestamp: string;
-  is_read: boolean;
+  user_type: 'client' | 'trainer';
+  username: string;
+  trainer?: {
+    id: number;
+    username: string;
+    first_name?: string;
+    last_name?: string;
+  } | null;
 }
 
 export default function ChatPage() {
-  const { user } = useAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [client, setClient] = useState<Client | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  
-  // Получаем ID клиента из параметров URL (например, /chat?clientId=1)
-  const clientId = searchParams?.get('clientId');
+  const router = useRouter();
+  const clientIdFromQuery = searchParams.get('clientId');
 
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [clients, setClients] = useState<ChatUser[]>([]);
+  const [isClientsLoading, setIsClientsLoading] = useState(true);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+
+  // Получение текущего пользователя
   useEffect(() => {
-    if (!user || user.user_type !== 'trainer') {
-      // Если пользователь не тренер, перенаправляем на главную
-      router.push('/home');
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+
+    console.log('[ChatPage] Token:', token ? 'exists' : 'missing');
+    console.log('[ChatPage] User from localStorage:', userStr);
+
+    if (!token || !userStr) {
+      console.warn('[ChatPage] No token or user, redirecting to /auth');
+      window.location.href = '/auth';
       return;
     }
 
-    if (!clientId) {
-      // Если не указан ID клиента, перенаправляем на админ панель
-      router.push('/admin');
+    try {
+      const user = JSON.parse(userStr);
+      console.log('[ChatPage] Parsed user:', user);
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('[ChatPage] Error parsing user:', error);
+      window.location.href = '/auth';
+    }
+  }, []);
+
+  // Обновление selectedClientId при изменении query параметра
+  useEffect(() => {
+    if (clientIdFromQuery) {
+      console.log('[ChatPage] clientIdFromQuery:', clientIdFromQuery);
+      setSelectedClientId(parseInt(clientIdFromQuery, 10));
+    } else {
+      setSelectedClientId(null);
+    }
+  }, [clientIdFromQuery]);
+
+  // Загрузка списка клиентов (для тренера)
+  useEffect(() => {
+    console.log('[ChatPage] useEffect for loading clients, currentUser:', currentUser);
+    
+    if (!currentUser || currentUser.user_type !== 'trainer') {
+      console.log('[ChatPage] Not a trainer, skipping clients load');
+      setIsClientsLoading(false);
       return;
     }
 
-    const loadChatData = async () => {
+    const loadClients = async () => {
       try {
-        // Используем моковые данные для клиента, так как реального API пока нет
-        const mockClient: Client = {
-          id: parseInt(clientId, 10),
-          username: `client${clientId}`,
-          email: `client${clientId}@example.com`,
-          first_name: `Клиент${clientId}`,
-          last_name: `Тестовый${clientId}`
-        };
-        
-        setClient(mockClient);
+        console.log('[ChatPage] Loading clients for trainer:', currentUser.id);
+        const data = await chatService.getUserChats();
+        console.log('[ChatPage] Received clients:', data);
+        setClients(data);
 
-        // Загружаем моковую историю сообщений
-        const mockMessages: Message[] = [
-          {
-            id: 1,
-            sender_id: parseInt(clientId, 10),
-            receiver_id: user.id,
-            message: 'Привет! Как дела?',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            is_read: true
-          },
-          {
-            id: 2,
-            sender_id: user.id,
-            receiver_id: parseInt(clientId, 10),
-            message: 'Привет! Всё отлично, спасибо! Как тренировки?',
-            timestamp: new Date(Date.now() - 1800000).toISOString(),
-            is_read: true
-          },
-          {
-            id: 3,
-            sender_id: parseInt(clientId, 10),
-            receiver_id: user.id,
-            message: 'Тренировки идут хорошо, но есть вопросы по питанию',
-            timestamp: new Date(Date.now() - 600000).toISOString(),
-            is_read: true
-          }
-        ];
-        setMessages(mockMessages);
+        // Если клиент не выбран, но есть клиенты в списке, выбираем первого
+        if (!selectedClientId && data.length > 0) {
+          const firstClientId = data[0].userId;
+          setSelectedClientId(firstClientId);
+          router.push(`/chat?clientId=${firstClientId}`);
+        }
       } catch (error) {
-        console.error('Error loading chat data:', error);
-        // Если не удалось загрузить данные, перенаправляем на админ панель
-        router.push('/admin');
+        console.error('[ChatPage] Error loading clients:', error);
       } finally {
-        setLoading(false);
+        setIsClientsLoading(false);
       }
     };
 
-    loadChatData();
-  }, [user, clientId, router]);
+    loadClients();
+  }, [currentUser, selectedClientId, router]);
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !client) return;
+  // Находим информацию о выбранном клиенте
+  const selectedClient = useMemo(
+    () => clients.find((c) => c.userId === selectedClientId),
+    [clients, selectedClientId]
+  );
 
-    // В реальном приложении здесь будет вызов API для отправки сообщения
-    const newMessageObj: Message = {
-      id: messages.length + 1,
-      sender_id: user!.id,
-      receiver_id: client.id,
-      message: newMessage,
-      timestamp: new Date().toISOString(),
-      is_read: false
-    };
-
-    setMessages([...messages, newMessageObj]);
-    setNewMessage('');
-  };
-
-  if (loading) {
+  // Показываем загрузку пока не определили пользователя
+  if (!currentUser) {
     return (
-      <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
-        <Container size="md" py="xl">
-          <Paper shadow="md" p="xl" radius="md">
-            <Text ta="center">Загрузка чата...</Text>
-          </Paper>
-        </Container>
-      </UserTypeProtectedRoute>
+      <Center style={{ height: '100vh' }}>
+        <Loader />
+      </Center>
     );
   }
 
-  if (!user || !client) {
+  console.log('[ChatPage] Rendering, user_type:', currentUser.user_type);
+
+  // Если пользователь - клиент, показываем только чат с его тренером
+  if (currentUser.user_type === 'client') {
+    if (!currentUser.trainer) {
+      return (
+        <Center style={{ height: 'calc(100vh - 60px)' }}>
+          <Stack align="center" gap="xs">
+            <Avatar size="lg" radius="xl" color="gray">
+              ?
+            </Avatar>
+            <Text c="dimmed">У вас нет закреплённого тренера</Text>
+          </Stack>
+        </Center>
+      );
+    }
+
     return (
-      <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
-        <Container size="md" py="xl">
-          <Paper shadow="md" p="xl" radius="md">
-            <Text ta="center">Не удалось загрузить данные чата</Text>
-          </Paper>
-        </Container>
-      </UserTypeProtectedRoute>
+      <Box style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)', padding: '16px' }}>
+        <ChatWindow
+          otherUserId={currentUser.trainer.id}
+          otherUserUsername={
+            `${currentUser.trainer.first_name || ''} ${currentUser.trainer.last_name || ''}`.trim() ||
+            currentUser.trainer.username
+          }
+          currentUserId={currentUser.id}
+          currentUserType="client"
+        />
+      </Box>
+    );
+  }
+
+  // Если пользователь - тренер
+  if (isClientsLoading) {
+    return (
+      <Center style={{ height: '100vh' }}>
+        <Loader />
+      </Center>
     );
   }
 
   return (
-    <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
-      <Container size="md" py="xl">
-        <Paper shadow="md" p="xl" radius="md">
-          <Group mb="xl">
-            <Avatar
-              src={null} // Здесь может быть аватар клиента
-              alt={client.username}
-              radius="xl"
-              size="md"
-            >
-              {client.username?.charAt(0)?.toUpperCase()}
-            </Avatar>
-            <div>
-              <Title order={3}>
-                {client.first_name} {client.last_name} ({client.username})
-              </Title>
-              <Text size="sm" c="dimmed">
-                {client.email}
-              </Text>
-            </div>
-          </Group>
+    <Box style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)', padding: '16px' }}>
+      <Box style={{ display: 'flex', flex: 1, overflow: 'hidden', padding: '32px' }}>
+        {/* Сайдбар со списком клиентов */}
+        <Box
+          style={{
+            width: '320px',
+            borderRight: '1px solid var(--mantine-color-gray-3)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <Box p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+            <Text fw={600} size="xl">
+              Клиенты
+            </Text>
+          </Box>
+          <ClientList clients={clients} selectedClientId={selectedClientId} />
+        </Box>
 
-          <Paper shadow="xs" p="md" mb="xl" style={{ height: '400px' }}>
-            <ScrollArea h="100%" offsetScrollbars>
-              <Stack gap="sm">
-                {messages.map((message) => (
-                  <div 
-                    key={message.id} 
-                    style={{ 
-                      textAlign: message.sender_id === user.id ? 'right' : 'left',
-                      marginLeft: message.sender_id === user.id ? '25%' : '0',
-                      marginRight: message.sender_id === user.id ? '0' : '25%'
-                    }}
-                  >
-                    <Paper 
-                      p="sm" 
-                      radius="md" 
-                      style={{ 
-                        display: 'inline-block',
-                        backgroundColor: message.sender_id === user.id ? '#3b82f6' : '#e5e7eb',
-                        color: message.sender_id === user.id ? 'white' : 'black'
-                      }}
-                    >
-                      <Text>{message.message}</Text>
-                      <Text size="xs" mt="xs" style={{ opacity: 0.7 }}>
-                        {new Date(message.timestamp).toLocaleString()}
-                      </Text>
-                    </Paper>
-                  </div>
-                ))}
-              </Stack>
-            </ScrollArea>
-          </Paper>
-
-          <Group>
-            <TextInput
-              placeholder="Введите сообщение..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.currentTarget.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              flex={1}
+        {/* Окно чата */}
+        <Box style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {selectedClientId && selectedClient ? (
+            <ChatWindow
+              otherUserId={selectedClientId}
+              otherUserUsername={selectedClient.username}
+              currentUserId={currentUser.id}
+              currentUserType="trainer"
             />
-            <Button onClick={handleSendMessage}>Отправить</Button>
-          </Group>
-        </Paper>
-      </Container>
-    </UserTypeProtectedRoute>
+          ) : (
+            <Center style={{ flex: 1 }}>
+              <Stack align="center" gap="xs">
+                <Avatar size="lg" radius="xl" color="gray">
+                  💬
+                </Avatar>
+                <Text c="dimmed">Выберите клиента для начала переписки</Text>
+              </Stack>
+            </Center>
+          )}
+        </Box>
+      </Box>
+    </Box>
   );
 }

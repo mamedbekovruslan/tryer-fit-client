@@ -1,6 +1,6 @@
 'use client';
 
-import { Flex, Text, Anchor, Group } from '@mantine/core';
+import { Flex, Text, Anchor, Group, Badge } from '@mantine/core';
 import Link from 'next/link';
 import { UserProfileDropdown } from '../UserProfileDropdown/UserProfileDropdown';
 import { useAuth } from '@/providers/AuthProvider';
@@ -49,13 +49,17 @@ export const HeaderContent = () => {
             Тренировки
           </Anchor>
         )}
+        {/* Ссылка на чат для всех пользователей */}
+        <Anchor component={Link} href="/chat" fw={500} c="white">
+          Чат
+        </Anchor>
       </Group>
 
       {/* Right side - User profile */}
       <Group>
         {user?.user_type === 'client' && (
-          <Anchor component={Link} href="/trainer" fw={500} c="white">
-            Тренер
+          <Anchor component={Link} href="/chat" fw={500} c="white">
+            Чат с тренером
           </Anchor>
         )}
         <UserProfileDropdown />

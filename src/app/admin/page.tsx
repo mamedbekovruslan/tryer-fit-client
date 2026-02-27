@@ -6,6 +6,7 @@ import { FiPlus, FiX } from 'react-icons/fi';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { trainerService, Trainer } from '@/services/trainerService';
+import { chatService, ChatUser } from '@/services/chatService';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -42,8 +43,7 @@ export default function AdminPage() {
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [clientsInWork, setClientsInWork] = useState<ExtendedClient[]>([]);
   const [newClients, setNewClients] = useState<ExtendedClient[]>([]);
-  const [chatClients, setChatClients] = useState<ExtendedClient[]>([]);
-  const [unreadCounts, setUnreadCounts] = useState<{[key: number]: number}>({});
+  const [chatClients, setChatClients] = useState<ChatUser[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
@@ -110,25 +110,28 @@ export default function AdminPage() {
         }
       }
 
-      // Устанавливаем моковые данные для чатов и счетчиков
-      const mockChatClients: ExtendedClient[] = [
-        { id: 1, username: 'client1', email: 'client1@example.com', first_name: 'Иван', last_name: 'Иванов', is_favorite: true },
-        { id: 3, username: 'newclient1', email: 'newclient1@example.com', first_name: 'Алексей', last_name: 'Сидоров', is_favorite: false },
-      ];
-
-      const mockUnreadCounts = {
-        1: 3,
-        3: 1
-      };
-
-      setChatClients(mockChatClients);
-      setUnreadCounts(mockUnreadCounts);
-
       setLoading(false);
     };
 
     loadTrainerData();
   }, [user]);
+
+  // Загрузка данных чата отдельно
+  useEffect(() => {
+    if (trainer) {
+      const loadChatData = async () => {
+        try {
+          const chats = await chatService.getUserChats();
+          console.log('Chat clients loaded:', chats);
+          setChatClients(chats);
+        } catch (error) {
+          console.error('Error loading chat data:', error);
+        }
+      };
+
+      loadChatData();
+    }
+  }, [trainer]);
 
   const handleSave = async () => {
     if (trainer) {
@@ -559,24 +562,39 @@ export default function AdminPage() {
               {/* Чат с клиентами */}
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Title order={3} mb="md">Чат с клиентами</Title>
-                {chatClients
-                  .sort((a, b) => (b.is_favorite ? 1 : 0) - (a.is_favorite ? 1 : 0)) // Сортировка по звездочке
-                  .map(client => (
-                    <div
-                      key={client.id}
-                      style={{ marginBottom: '10px', cursor: 'pointer' }}
-                      onClick={() => router.push(`/chat?clientId=${client.id}`)}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <Text fw={500}>
-                          {client.first_name} {client.last_name} ({client.username})
-                        </Text>
-                        {unreadCounts[client.id] > 0 && (
-                          <Badge color="red">{unreadCounts[client.id]}</Badge>
-                        )}
-                      </Flex>
-                    </div>
-                  ))}
+                {chatClients.length > 0 ? (
+                  chatClients
+                    .map(client => (
+                      <div
+                        key={client.userId}
+                        style={{ marginBottom: '10px', cursor: 'pointer' }}
+                        onClick={() => router.push(`/chat?clientId=${client.userId}`)}
+                      >
+                        <Flex justify="space-between" align="center">
+                          <Flex align="center" gap="sm" style={{ flex: 1, minWidth: 0 }}>
+                            <Avatar size="sm" radius="xl">
+                              {client.username.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <Text fw={500} truncate="end">
+                                {client.username}
+                              </Text>
+                              {client.lastMessage && (
+                                <Text size="xs" c="dimmed" truncate="end">
+                                  {client.lastMessage.message}
+                                </Text>
+                              )}
+                            </div>
+                          </Flex>
+                          {client.unreadCount > 0 && (
+                            <Badge color="red">{client.unreadCount}</Badge>
+                          )}
+                        </Flex>
+                      </div>
+                    ))
+                ) : (
+                  <Text c="dimmed" size="sm">Нет активных чатов</Text>
+                )}
               </Card>
             </Grid.Col>
           </Grid>

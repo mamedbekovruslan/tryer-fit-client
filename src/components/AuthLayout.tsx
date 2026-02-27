@@ -17,13 +17,12 @@ const protectedRoutes = ['/home', '/profile', '/admin', '/chat', '/nutrition', '
 const userTypeRestrictedRoutes: { [key: string]: string[] } = {
   '/profile': ['client'],    // Только клиенты могут получить доступ к профилю
   '/admin': ['trainer'],     // Только тренеры могут получить доступ к админке
-  '/chat': ['trainer'],      // Только тренеры могут получить доступ к чату
   '/progress': ['client'],   // Только клиенты могут получить доступ к прогрессу
   '/nutrition': ['client'],  // Только клиенты могут получить доступ к питанию
   '/me': ['client'],         // Только клиенты могут получить доступ к личным данным
-  '/trainer': ['client'],    // Только клиенты могут получить доступ к чату с тренером
   '/workout': ['client'],    // Только клиенты могут получить доступ к тренировкам
   '/trainer/workout': ['trainer'], // Только тренеры могут получить доступ к управлению тренировками
+  // Чат доступен обоим типам пользователей
 };
 
 export const AuthLayout = ({ children }: AuthLayoutProps) => {

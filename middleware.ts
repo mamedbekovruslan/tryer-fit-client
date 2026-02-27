@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Список защищенных маршрутов
-const protectedRoutes = ['/home', '/profile', '/admin'];
+const protectedRoutes = ['/home', '/profile', '/admin', '/chat'];
 
 // Маршруты с ограничением по типу пользователя
 const userTypeRestrictedRoutes: { [key: string]: string[] } = {
   '/profile': ['client'], // Только клиенты могут получить доступ к профилю
-  '/admin': ['trainer']   // Только тренеры могут получить доступ к админке
+  '/admin': ['trainer'],   // Только тренеры могут получить доступ к админке
+  // Чат доступен обоим типам пользователей
 };
 
 // Функция для проверки валидности JWT токена
