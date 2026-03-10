@@ -39,7 +39,37 @@ export interface UpdateTrainerData {
   photo_urls?: string[];
 }
 
+export interface CreateTrainerRequest {
+  username: string;
+  email: string;
+  password: string;
+  first_name?: string;
+  last_name?: string;
+  middle_name?: string;
+  gender?: string;
+  height?: number;
+  weight?: number;
+  phone?: string;
+  birth_date?: string;
+  education?: string;
+  institution?: string;
+  degree?: string;
+  specialization?: string;
+  certificate_number?: string;
+  photo_urls?: string[];
+}
+
 export const trainerService = {
+  register: async (trainerData: CreateTrainerRequest): Promise<Trainer> => {
+    try {
+      const response = await apiClient.post('/trainers/register', trainerData);
+      return response.data;
+    } catch (error) {
+      console.error('Error registering trainer:', error);
+      throw error;
+    }
+  },
+
   getMyTrainerProfile: async (): Promise<Trainer> => {
     try {
       // Используем эндпоинт /trainers/profile, который должен возвращать полную информацию о текущем тренере

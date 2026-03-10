@@ -5,6 +5,10 @@ import {
   NumberInput,
   Textarea,
   Divider,
+  Avatar,
+  Button,
+  Group,
+  Text,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { Dropzone } from '@mantine/dropzone';
@@ -45,10 +49,26 @@ interface TrainerRegistrationFormProps {
     setSpecialization: (value: string) => void;
     certificateNumber: string;
     setCertificateNumber: (value: string) => void;
+    photoUrls: string[];
+    setPhotoUrls: (value: string[]) => void;
   };
 }
 
 export default function TrainerRegistrationForm({ commonFields }: TrainerRegistrationFormProps) {
+  const handlePhotoDrop = async (files: File[]) => {
+    const file = files[0];
+    if (!file) return;
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.readAsDataURL(file);
+    });
+
+    commonFields.setPhotoUrls([dataUrl]);
+  };
+
   return (
     <>
       <TextInput
@@ -184,7 +204,7 @@ export default function TrainerRegistrationForm({ commonFields }: TrainerRegistr
       />
 
       <Dropzone
-        onDrop={(files) => console.log('Dropped files:', files)}
+        onDrop={handlePhotoDrop}
         onReject={(files) => console.log('Rejected files:', files)}
         maxSize={3 * 1024 ** 2}
         accept={['image/*']}
@@ -200,6 +220,22 @@ export default function TrainerRegistrationForm({ commonFields }: TrainerRegistr
           <div style={{ textAlign: 'center' }}>Загрузите фото профиля</div>
         </DropzoneIdle>
       </Dropzone>
+      {commonFields.photoUrls[0] && (
+        <Group mt="sm" justify="space-between" align="center">
+          <Group>
+            <Avatar src={commonFields.photoUrls[0]} radius="xl" size="lg" />
+            <Text size="sm">Фото профиля выбрано</Text>
+          </Group>
+          <Button
+            variant="light"
+            color="red"
+            size="xs"
+            onClick={() => commonFields.setPhotoUrls([])}
+          >
+            Удалить фото
+          </Button>
+        </Group>
+      )}
 
       <TextInput
         label="Номер сертификата тренера"

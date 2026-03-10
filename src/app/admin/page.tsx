@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Grid, Button, TextInput, NumberInput, Select, Group } from '@mantine/core';
+import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Grid, Button, TextInput, NumberInput, Select, Group, FileInput } from '@mantine/core';
 import { FiPlus, FiX } from 'react-icons/fi';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
@@ -59,6 +59,7 @@ export default function AdminPage() {
     degree: '',
     specialization: '',
     certificate_number: '',
+    photo_urls: [] as string[],
   });
 
   useEffect(() => {
@@ -150,6 +151,22 @@ export default function AdminPage() {
     }
   };
 
+  const handleProfilePhotoChange = async (file: File | null) => {
+    if (!file) {
+      setFormData((prev) => ({ ...prev, photo_urls: [] }));
+      return;
+    }
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.readAsDataURL(file);
+    });
+
+    setFormData((prev) => ({ ...prev, photo_urls: [dataUrl] }));
+  };
+
   // Обновляем formData при переходе в режим редактирования
   useEffect(() => {
     if (trainer && isEditing) {
@@ -167,6 +184,7 @@ export default function AdminPage() {
         degree: trainer.degree || '',
         specialization: trainer.specialization || '',
         certificate_number: trainer.certificate_number || '',
+        photo_urls: trainer.photo_urls || [],
       });
     }
   }, [isEditing, trainer]);
@@ -261,7 +279,7 @@ export default function AdminPage() {
                 <Stack gap="md">
                   <Flex justify="center" mb="md">
                     <Avatar
-                      src={trainer.photo_urls?.[0] || null}
+                      src={isEditing ? formData.photo_urls?.[0] || trainer.photo_urls?.[0] || null : trainer.photo_urls?.[0] || null}
                       alt={trainer.username}
                       radius="xl"
                       size="xl"
@@ -274,6 +292,29 @@ export default function AdminPage() {
 
                   {isEditing ? (
                     <>
+                      <div>
+                        <Text size="sm" c="dimmed">Фото профиля</Text>
+                        <FileInput
+                          placeholder="Выберите изображение"
+                          accept="image/*"
+                          clearable
+                          onChange={handleProfilePhotoChange}
+                        />
+                        {formData.photo_urls[0] && (
+                          <Group mt="xs">
+                            <Avatar src={formData.photo_urls[0]} radius="xl" size="md" />
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="red"
+                              onClick={() => setFormData({ ...formData, photo_urls: [] })}
+                            >
+                              Удалить фото
+                            </Button>
+                          </Group>
+                        )}
+                      </div>
+
                       <div>
                         <Text size="sm" c="dimmed">Имя</Text>
                         <TextInput
