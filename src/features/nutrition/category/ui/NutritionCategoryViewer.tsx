@@ -14,10 +14,11 @@ import {
   TextInput,
   Flex,
   Badge,
-  Group
+  Group,
+  ActionIcon,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { FiPlus } from 'react-icons/fi';
+import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import { nutritionService, NutritionCategory } from '@/services/nutritionService';
 import Link from 'next/link';
 
@@ -28,6 +29,8 @@ export default function NutritionCategoryViewer() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [creating, setCreating] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<NutritionCategory | null>(null);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -81,6 +84,35 @@ export default function NutritionCategoryViewer() {
     }
   };
 
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) {
+      return;
+    }
+
+    setDeletingCategoryId(categoryToDelete.id);
+
+    try {
+      await nutritionService.deleteNutritionCategory(categoryToDelete.id);
+      setCategories((prevCategories) =>
+        prevCategories.filter((category) => category.id !== categoryToDelete.id)
+      );
+      notifications.show({
+        title: 'Успешно',
+        message: 'Категория питания удалена',
+        color: 'green',
+      });
+      setCategoryToDelete(null);
+    } catch (error) {
+      notifications.show({
+        title: 'Ошибка удаления',
+        message: 'Не удалось удалить категорию питания',
+        color: 'red',
+      });
+    } finally {
+      setDeletingCategoryId(null);
+    }
+  };
+
   return (
     <Container size="lg" py="xl">
       <Paper shadow="md" p="xl" radius="md">
@@ -123,7 +155,21 @@ export default function NutritionCategoryViewer() {
                           <Text size="xs" c="dimmed">
                             Создана: {new Date(category.createdAt).toLocaleDateString()}
                           </Text>
-                          <Badge variant="light">Категория</Badge>
+                          <Group gap="xs">
+                            <Badge variant="light">Категория</Badge>
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              aria-label={`Удалить категорию ${category.name}`}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setCategoryToDelete(category);
+                              }}
+                            >
+                              <FiTrash2 size={16} />
+                            </ActionIcon>
+                          </Group>
                         </Group>
                       </Stack>
                     </Card>
@@ -188,6 +234,47 @@ export default function NutritionCategoryViewer() {
               disabled={!newCategoryName.trim()}
             >
               Создать
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={categoryToDelete !== null}
+        onClose={() => {
+          if (deletingCategoryId === null) {
+            setCategoryToDelete(null);
+          }
+        }}
+        title="Удалить категорию"
+        centered
+      >
+        <Stack>
+          <Text>
+            Удалить категорию{' '}
+            <Text span fw={700}>
+              {categoryToDelete?.name}
+            </Text>
+            ?
+          </Text>
+          <Text size="sm" c="dimmed">
+            Действие удалит запись из базы данных.
+          </Text>
+
+          <Group justify="right" mt="md">
+            <Button
+              variant="outline"
+              onClick={() => setCategoryToDelete(null)}
+              disabled={deletingCategoryId !== null}
+            >
+              Отмена
+            </Button>
+            <Button
+              color="red"
+              onClick={handleDeleteCategory}
+              loading={deletingCategoryId !== null}
+            >
+              Удалить
             </Button>
           </Group>
         </Stack>

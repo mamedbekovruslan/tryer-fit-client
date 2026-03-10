@@ -25,6 +25,8 @@ export interface Client {
   // другие поля клиента
 }
 
+export type ClientResponse = Client;
+
 export interface ClientNutritionPlan {
   id: number;
   client_id: number;

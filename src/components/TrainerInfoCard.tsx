@@ -1,6 +1,7 @@
 'use client';
 
-import { Card, Image, Text, Group, Box, Stack } from '@mantine/core';
+import { useState } from 'react';
+import { Avatar, Card, Text, Group, Box, Stack } from '@mantine/core';
 import { Trainer } from '@/services/trainerService';
 
 interface TrainerInfoCardProps {
@@ -37,6 +38,8 @@ function getTrainerPhotoSrc(trainer: Trainer | undefined): string | undefined {
 }
 
 export default function TrainerInfoCard({ trainer }: TrainerInfoCardProps) {
+  const [imageError, setImageError] = useState(false);
+
   if (!trainer) {
     return (
       <Card shadow="sm" padding="lg" radius="md" withBorder>
@@ -50,20 +53,26 @@ export default function TrainerInfoCard({ trainer }: TrainerInfoCardProps) {
     );
   }
 
+  const trainerPhotoSrc = getTrainerPhotoSrc(trainer);
+  const trainerInitials = `${trainer.first_name?.charAt(0) || ''}${trainer.last_name?.charAt(0) || trainer.username?.charAt(0) || ''}`.toUpperCase();
+
   return (
     <Card shadow="sm" padding="lg" radius="md" withBorder>
       <Group wrap="nowrap" align="flex-start">
         {/* Фотография тренера */}
         <Box flex={0}>
-          <Image
-            src={getTrainerPhotoSrc(trainer) || '/placeholder-trainer.jpg'}
+          <Avatar
+            src={!imageError ? trainerPhotoSrc : undefined}
             alt={`Фото тренера ${trainer.first_name} ${trainer.last_name}`}
-            width={120}
-            height={120}
-            fit="cover"
+            size={120}
             radius="md"
-            fallbackSrc="/placeholder-trainer.jpg"
-          />
+            styles={{ placeholder: { fontSize: 32, fontWeight: 700 } }}
+            imageProps={{
+              onError: () => setImageError(true),
+            }}
+          >
+            {trainerInitials || 'T'}
+          </Avatar>
         </Box>
 
         {/* Информация о тренере */}

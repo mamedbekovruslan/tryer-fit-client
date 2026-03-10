@@ -28,7 +28,7 @@ import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { workoutService, WorkoutCategory, WorkoutProgram, ClientWorkoutProgram } from '@/services/workoutService';
-import { clientService, ClientResponse } from '@/services/clientService';
+import { Client } from '@/services/clientService';
 import { trainerService } from '@/services/trainerService';
 import { useRouter } from 'next/navigation';
 import { FaPlus, FaEdit, FaTrash, FaDumbbell, FaUsers, FaList } from 'react-icons/fa';
@@ -39,7 +39,7 @@ export default function TrainerWorkoutPage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<WorkoutCategory[]>([]);
   const [programs, setPrograms] = useState<WorkoutProgram[]>([]);
-  const [clients, setClients] = useState<ClientResponse[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [activeTab, setActiveTab] = useState<string | null>('programs');
   const [trainerId, setTrainerId] = useState<number | null>(null);
   
@@ -67,6 +67,11 @@ export default function TrainerWorkoutPage() {
   const loadData = async () => {
     try {
       setLoading(true);
+
+      if (!user || user.user_type !== 'trainer') {
+        return;
+      }
+
       // Всегда загружаем категории (нужны для создания программы)
       const cats = await workoutService.getWorkoutCategories();
       setCategories(cats);
@@ -76,16 +81,28 @@ export default function TrainerWorkoutPage() {
       setPrograms(progs);
       
       // Загружаем профиль тренера для получения ID
-      if (!trainerId && user.user_type === 'trainer') {
-        try {
-          const trainer = await trainerService.getMyTrainerProfile();
-          setTrainerId(trainer.id);
-          
-          // Загружаем клиентов тренера
-          const trainerClients = await trainerService.getClientsByTrainerId(trainer.id);
-          setClients(trainerClients);
-        } catch (error) {
-          console.error('Error loading trainer profile:', error);
+      try {
+        const currentTrainerId = trainerId ?? user.id;
+        const trainerProfile = await trainerService.getMyTrainerProfile();
+        const resolvedTrainerId = trainerProfile.id || currentTrainerId;
+
+        setTrainerId(resolvedTrainerId);
+
+        // Загружаем клиентов тренера при каждом обновлении страницы
+        const trainerClients = await trainerService.getClientsByTrainerId(resolvedTrainerId);
+        setClients(trainerClients);
+      } catch (error) {
+        console.error('Error loading trainer profile:', error);
+
+        // Fallback на id из auth-контекста, если профиль тренера временно не загрузился
+        const fallbackTrainerId = trainerId ?? user.id;
+        if (fallbackTrainerId) {
+          try {
+            const trainerClients = await trainerService.getClientsByTrainerId(fallbackTrainerId);
+            setClients(trainerClients);
+          } catch (clientsError) {
+            console.error('Error loading trainer clients:', clientsError);
+          }
         }
       }
     } catch (error) {
@@ -268,6 +285,7 @@ export default function TrainerWorkoutPage() {
       setAssignModalOpen(false);
       setSelectedClientForAssign(null);
       setSelectedProgramForAssign(null);
+      await loadData();
     } catch (error) {
       notifications.show({
         title: 'Ошибка',
@@ -275,6 +293,17 @@ export default function TrainerWorkoutPage() {
         color: 'red',
       });
     }
+  };
+
+  const openAssignModalForClient = (clientId: number) => {
+    setSelectedClientForAssign(clientId);
+    setSelectedProgramForAssign(null);
+    setAssignModalOpen(true);
+  };
+
+  const getClientLabel = (client: Client) => {
+    const fullName = `${client.first_name || ''} ${client.last_name || ''}`.trim();
+    return fullName ? `${fullName} (${client.username})` : client.username;
   };
 
   return (
@@ -418,9 +447,59 @@ export default function TrainerWorkoutPage() {
 
             {/* Clients Tab */}
             <Tabs.Panel value="clients" pt="xs">
-              <Text ta="center" c="dimmed">
-                Управление клиентами и назначением программ будет доступно здесь
-              </Text>
+              <Grid>
+                {clients.map((client) => (
+                  <Grid.Col span={{ base: 12, md: 6 }} key={client.id}>
+                    <Card shadow="sm" padding="lg" radius="md" withBorder>
+                      <Stack gap="md">
+                        <Group justify="space-between" align="flex-start">
+                          <div>
+                            <Title order={4}>{getClientLabel(client)}</Title>
+                            <Text size="sm" c="dimmed">
+                              {client.email}
+                            </Text>
+                          </div>
+                          <Badge variant="light" color="blue">
+                            Клиент
+                          </Badge>
+                        </Group>
+
+                        {client.fitness_goal && (
+                          <Text size="sm">
+                            Цель: {client.fitness_goal}
+                          </Text>
+                        )}
+
+                        <Group justify="space-between">
+                          <Button
+                            variant="outline"
+                            onClick={() => router.push(`/admin/client/${client.id}`)}
+                          >
+                            Открыть профиль
+                          </Button>
+                          <Button
+                            leftSection={<FaUsers />}
+                            onClick={() => openAssignModalForClient(client.id)}
+                          >
+                            Назначить программу
+                          </Button>
+                        </Group>
+                      </Stack>
+                    </Card>
+                  </Grid.Col>
+                ))}
+
+                {clients.length === 0 && (
+                  <Grid.Col span={12}>
+                    <Paper p="xl" radius="md" withBorder ta="center">
+                      <Text size="lg">У тренера пока нет привязанных клиентов</Text>
+                      <Text c="dimmed" mt="sm">
+                        Добавьте клиента в панели тренера, затем он появится здесь.
+                      </Text>
+                    </Paper>
+                  </Grid.Col>
+                )}
+              </Grid>
             </Tabs.Panel>
           </Tabs>
         </Paper>
@@ -510,7 +589,7 @@ export default function TrainerWorkoutPage() {
               placeholder="Выберите клиента"
               data={clients.map(client => ({ 
                 value: client.id.toString(), 
-                label: `${client.first_name || ''} ${client.last_name || ''} (${client.username})`.trim()
+                label: getClientLabel(client)
               }))}
               value={selectedClientForAssign?.toString() || ''}
               onChange={(value) => setSelectedClientForAssign(value ? parseInt(value) : null)}
