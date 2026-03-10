@@ -55,6 +55,19 @@ export interface ClientNutritionPlan {
   updatedAt: Date;
 }
 
+type ClientNutritionPlanApiResponse = ClientNutritionPlan & {
+  is_active?: boolean;
+};
+
+function normalizeClientNutritionPlan(
+  plan: ClientNutritionPlanApiResponse
+): ClientNutritionPlan {
+  return {
+    ...plan,
+    isActive: plan.isActive ?? plan.is_active ?? false,
+  };
+}
+
 export interface CreateNutritionCategoryRequest {
   name: string;
   description?: string;
@@ -346,10 +359,10 @@ export const nutritionService = {
   // Client Nutrition Plans
   getClientNutritionPlans: async (clientId: number): Promise<ClientNutritionPlan[]> => {
     try {
-      const response = await apiClient.get<ClientNutritionPlan[]>(
+      const response = await apiClient.get<ClientNutritionPlanApiResponse[]>(
         `/client-nutrition-plans/client/${clientId}`
       );
-      return response.data;
+      return response.data.map(normalizeClientNutritionPlan);
     } catch (error) {
       console.error('Error fetching client nutrition plans:', error);
       throw error;
@@ -358,10 +371,10 @@ export const nutritionService = {
 
   getActiveClientNutritionPlans: async (clientId: number): Promise<ClientNutritionPlan[]> => {
     try {
-      const response = await apiClient.get<ClientNutritionPlan[]>(
+      const response = await apiClient.get<ClientNutritionPlanApiResponse[]>(
         `/client-nutrition-plans/client/${clientId}/active`
       );
-      return response.data;
+      return response.data.map(normalizeClientNutritionPlan);
     } catch (error) {
       console.error('Error fetching active client nutrition plans:', error);
       throw error;
@@ -370,7 +383,7 @@ export const nutritionService = {
 
   assignNutritionPlanToClient: async (clientId: number, planId: number): Promise<ClientNutritionPlan> => {
     try {
-      const response = await apiClient.post<ClientNutritionPlan>(
+      const response = await apiClient.post<ClientNutritionPlanApiResponse>(
         `/client-nutrition-plans`,
         {
           clientId: clientId,
@@ -378,7 +391,7 @@ export const nutritionService = {
           isActive: true // По умолчанию активный
         }
       );
-      return response.data;
+      return normalizeClientNutritionPlan(response.data);
     } catch (error) {
       console.error('Error assigning nutrition plan to client:', error);
       throw error;
@@ -411,11 +424,11 @@ export const nutritionService = {
 
   updateClientNutritionPlan: async (id: number, data: Partial<{ isActive: boolean }>): Promise<ClientNutritionPlan> => {
     try {
-      const response = await apiClient.put<ClientNutritionPlan>(
+      const response = await apiClient.put<ClientNutritionPlanApiResponse>(
         `/client-nutrition-plans/${id}`,
         data
       );
-      return response.data;
+      return normalizeClientNutritionPlan(response.data);
     } catch (error) {
       console.error('Error updating client nutrition plan:', error);
       throw error;
