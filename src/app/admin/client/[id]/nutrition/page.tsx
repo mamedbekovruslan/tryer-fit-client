@@ -176,7 +176,7 @@ export default function ClientNutritionPlansPage() {
 
                 <Group justify="center" mt="xl">
                   <Link href={`/admin/client/${clientId}`} passHref>
-                    <Button variant="outline" size="lg">
+                    <Button variant="outline" size="md">
                       Назад к профилю клиента
                     </Button>
                   </Link>
