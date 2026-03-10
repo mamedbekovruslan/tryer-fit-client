@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Container, Title, Text, Paper, Button, Group, NumberInput, Alert, Image } from '@mantine/core';
+import { Container, Title, Text, Paper, Button, Group, NumberInput, Alert, Image, FileInput } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
-import { FaUpload, FaCamera, FaTimes } from 'react-icons/fa';
 import { useAuth } from '@/providers/AuthProvider';
 import { progressReportService } from '@/services/progressReportService';
 
@@ -57,7 +55,7 @@ export default function NewProgressReportPage() {
   const [success, setSuccess] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const handleChange = (field: keyof ProgressReport, value: any) => {
+  const handleChange = (field: keyof LocalProgressReport, value: any) => {
     setReportData(prev => ({
       ...prev,
       [field]: value
@@ -73,10 +71,26 @@ export default function NewProgressReportPage() {
     }
   };
 
-  const handlePhotoUpload = (files: File[]) => {
+  const fileToDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error(`Не удалось прочитать файл ${file.name}`));
+      reader.readAsDataURL(file);
+    });
+
+  const handlePhotoUpload = (file: File | null) => {
+    if (!file) {
+      setReportData(prev => ({
+        ...prev,
+        photos: []
+      }));
+      return;
+    }
+
     setReportData(prev => ({
       ...prev,
-      photos: [...prev.photos, ...files]
+      photos: [file]
     }));
   };
 
@@ -126,6 +140,10 @@ export default function NewProgressReportPage() {
     setUploading(true);
 
     try {
+      const uploadedPhotoUrls = await Promise.all(
+        reportData.photos.map((photo) => fileToDataUrl(photo))
+      );
+
       // Подготовка данных для отправки
       const progressReportData = {
         date: reportData.date!.toISOString(), // Преобразуем дату в ISO строку для корректной передачи
@@ -138,7 +156,7 @@ export default function NewProgressReportPage() {
         bodyFat: typeof reportData.bodyFat === 'number' ? reportData.bodyFat : undefined,
         muscleMass: typeof reportData.muscleMass === 'number' ? reportData.muscleMass : undefined,
         notes: reportData.notes,
-        photoUrls: [] as string[], // Пока пустой массив, позже добавим загрузку фото
+        photoUrls: uploadedPhotoUrls,
       };
 
       // Отправка данных на сервер
@@ -281,40 +299,16 @@ export default function NewProgressReportPage() {
             mb="md"
           />
 
-          <Dropzone
-            onDrop={handlePhotoUpload}
-            onReject={(files) => console.log('rejected files', files)}
-            maxSize={3 * 1024 ** 2} // 3MB
-            accept={IMAGE_MIME_TYPE}
+          <Text size="sm" mb="xs" mt="md">
+            Фото прогресса
+          </Text>
+          <FileInput
+            placeholder="Выберите изображение"
+            accept="image/*"
+            clearable
+            onChange={handlePhotoUpload}
             mb="md"
-          >
-            <Group justify="center" gap="xl" mih={220} wrap="nowrap">
-              <Dropzone.Accept>
-                <FaUpload
-                  style={{ width: '50px', height: '50px', color: '#42A5F5' }}
-                />
-              </Dropzone.Accept>
-              <Dropzone.Reject>
-                <FaTimes
-                  style={{ width: '50px', height: '50px', color: '#EF5350' }}
-                />
-              </Dropzone.Reject>
-              <Dropzone.Idle>
-                <FaCamera
-                  style={{ width: '50px', height: '50px' }}
-                />
-              </Dropzone.Idle>
-
-              <div>
-                <Text size="xl" inline>
-                  Загрузите фотоотчет
-                </Text>
-                <Text size="sm" c="dimmed" inline mt={7}>
-                  Перетащите файлы сюда или нажмите для выбора. Максимальный размер 3МБ.
-                </Text>
-              </div>
-            </Group>
-          </Dropzone>
+          />
 
           {reportData.photos.length > 0 && (
             <Group mt="md">
@@ -329,13 +323,13 @@ export default function NewProgressReportPage() {
                     radius="md"
                   />
                   <Button
-                    variant="subtle"
+                    size="xs"
+                    variant="light"
                     color="red"
-                    size="compact-xs"
-                    style={{ position: 'absolute', top: -5, right: -5 }}
+                    style={{ position: 'absolute', top: -10, right: -10 }}
                     onClick={() => removePhoto(index)}
                   >
-                    ×
+                    Удалить
                   </Button>
                 </div>
               ))}

@@ -29,6 +29,32 @@ interface Comment {
   text: string;
 }
 
+const chartLabelMap: Record<string, string> = {
+  weight: 'Вес',
+  bodyFat: 'Процент жира',
+  muscleMass: 'Мышечная масса',
+};
+
+function formatChartDate(value: string) {
+  return new Date(value).toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+  });
+}
+
+function formatTooltipDate(value: string) {
+  return new Date(value).toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+function formatTooltipValue(value: number, name: string) {
+  const label = chartLabelMap[name] || name;
+  return [`${value}`, label];
+}
+
 export default function ProgressPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -83,7 +109,7 @@ export default function ProgressPage() {
 
   // Преобразование данных для графика
   const chartData = filteredData.map(item => ({
-    date: new Date(item.date).toISOString().split('T')[0], // Преобразуем дату в строку формата YYYY-MM-DD
+    date: item.date,
     weight: item.weight || 0,
     bodyFat: item.bodyFat || 0,
     muscleMass: item.muscleMass || 0,
@@ -170,13 +196,38 @@ export default function ProgressPage() {
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+              <XAxis dataKey="date" tickFormatter={formatChartDate} />
               <YAxis />
-              <Tooltip />
+              <Tooltip
+                labelFormatter={formatTooltipDate}
+                formatter={formatTooltipValue}
+              />
               <Legend />
-              {displayOptions.weight && <Line type="monotone" dataKey="weight" stroke="#8884d8" activeDot={{ r: 8 }} />}
-              {displayOptions.bodyFat && <Line type="monotone" dataKey="bodyFat" stroke="#82ca9d" />}
-              {displayOptions.muscleMass && <Line type="monotone" dataKey="muscleMass" stroke="#ffc658" />}
+              {displayOptions.weight && (
+                <Line
+                  type="monotone"
+                  dataKey="weight"
+                  name={chartLabelMap.weight}
+                  stroke="#8884d8"
+                  activeDot={{ r: 8 }}
+                />
+              )}
+              {displayOptions.bodyFat && (
+                <Line
+                  type="monotone"
+                  dataKey="bodyFat"
+                  name={chartLabelMap.bodyFat}
+                  stroke="#82ca9d"
+                />
+              )}
+              {displayOptions.muscleMass && (
+                <Line
+                  type="monotone"
+                  dataKey="muscleMass"
+                  name={chartLabelMap.muscleMass}
+                  stroke="#ffc658"
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </Paper>
