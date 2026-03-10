@@ -1,10 +1,39 @@
 'use client';
 
 import { Card, Image, Text, Group, Box, Stack } from '@mantine/core';
-import { Trainer } from '@/services/clientService';
+import { Trainer } from '@/services/trainerService';
 
 interface TrainerInfoCardProps {
   trainer: Trainer | undefined;
+}
+
+function getTrainerPhotoSrc(trainer: Trainer | undefined): string | undefined {
+  if (!trainer) return undefined;
+
+  const rawPhotos =
+    (trainer as unknown as { photo_urls?: unknown; photoUrls?: unknown }).photo_urls ??
+    (trainer as unknown as { photo_urls?: unknown; photoUrls?: unknown }).photoUrls;
+
+  if (Array.isArray(rawPhotos) && typeof rawPhotos[0] === 'string' && rawPhotos[0].trim()) {
+    return rawPhotos[0];
+  }
+
+  if (typeof rawPhotos === 'string' && rawPhotos.trim()) {
+    const trimmed = rawPhotos.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed) && typeof parsed[0] === 'string' && parsed[0].trim()) {
+          return parsed[0];
+        }
+      } catch {
+        return undefined;
+      }
+    }
+    return trimmed;
+  }
+
+  return undefined;
 }
 
 export default function TrainerInfoCard({ trainer }: TrainerInfoCardProps) {
@@ -27,7 +56,7 @@ export default function TrainerInfoCard({ trainer }: TrainerInfoCardProps) {
         {/* Фотография тренера */}
         <Box flex={0}>
           <Image
-            src={trainer.photo_urls && trainer.photo_urls.length > 0 ? trainer.photo_urls[0] : '/placeholder-trainer.jpg'}
+            src={getTrainerPhotoSrc(trainer) || '/placeholder-trainer.jpg'}
             alt={`Фото тренера ${trainer.first_name} ${trainer.last_name}`}
             width={120}
             height={120}

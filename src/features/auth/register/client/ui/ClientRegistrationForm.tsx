@@ -6,6 +6,8 @@ import {
   Divider,
   Textarea,
   Title,
+  Avatar,
+  Button,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import { DateValue } from '@mantine/dates';
@@ -68,10 +70,18 @@ interface ClientRegistrationFormProps {
 }
 
 export default function ClientRegistrationForm({ commonFields }: ClientRegistrationFormProps) {
-  const handlePhotoUpload = (files: File[]) => {
-    // Convert files to URLs for preview - in a real app you would upload these to a server
-    const urls = files.map(file => URL.createObjectURL(file));
-    commonFields.setPhotoUrls([...commonFields.photoUrls, ...urls]);
+  const handlePhotoUpload = async (files: File[]) => {
+    const file = files[0];
+    if (!file) return;
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.readAsDataURL(file);
+    });
+
+    commonFields.setPhotoUrls([dataUrl]);
   };
 
   return (
@@ -307,9 +317,9 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
         mt="md"
       />
 
-      {/* Загрузка фотографий */}
+      {/* Загрузка фото профиля */}
       <div>
-        <Text size="sm" mb="xs" mt="md">Фотографии (спереди, сбоку, сзади)</Text>
+        <Text size="sm" mb="xs" mt="md">Фото профиля</Text>
         <Dropzone
           onDrop={handlePhotoUpload}
           onReject={(files) => console.log('rejected files', files)}
@@ -329,14 +339,30 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
 
             <div>
               <Text size="xl" inline>
-                Перетащите сюда изображения или нажмите для выбора
+                Перетащите сюда изображение или нажмите для выбора
               </Text>
               <Text size="sm" c="dimmed" inline mt={7}>
-                Загрузите фотографии в полный рост: спереди, сбоку и сзади. Максимальный размер файла: 3 мб.
+                Загрузите фото профиля. Максимальный размер файла: 3 мб.
               </Text>
             </div>
           </Group>
         </Dropzone>
+        {commonFields.photoUrls[0] && (
+          <Group mt="sm" justify="space-between" align="center">
+            <Group>
+              <Avatar src={commonFields.photoUrls[0]} radius="xl" size="lg" />
+              <Text size="sm">Фото профиля выбрано</Text>
+            </Group>
+            <Button
+              variant="light"
+              color="red"
+              size="xs"
+              onClick={() => commonFields.setPhotoUrls([])}
+            >
+              Удалить фото
+            </Button>
+          </Group>
+        )}
       </div>
     </>
   );

@@ -15,6 +15,7 @@ export interface ChatUser {
   userId: number;
   username: string;
   email?: string;
+  photo_urls?: string[];
   lastMessage?: ChatMessage;
   unreadCount: number;
 }

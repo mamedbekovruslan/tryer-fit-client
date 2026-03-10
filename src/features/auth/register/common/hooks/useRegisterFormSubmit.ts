@@ -123,8 +123,12 @@ export const useRegisterFormSubmit = (): RegisterFormSubmitHandler => {
       localStorage.setItem('token', loginResponse.access_token);
       localStorage.setItem('user', JSON.stringify(loginResponse.user));
 
-      // Перенаправляем на главную страницу
-      window.location.href = '/home';
+      // Перенаправляем в зависимости от типа пользователя
+      if (loginResponse.user.user_type === 'trainer') {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/home';
+      }
     } catch (err) {
       console.error('Registration error:', err);
       setError('Ошибка регистрации. Пожалуйста, проверьте введенные данные и попробуйте снова.');

@@ -17,6 +17,7 @@ interface ExtendedClient {
   email: string;
   first_name?: string;
   last_name?: string;
+  photo_urls?: string[];
   is_favorite: boolean; // поле "звездочка"
   trainer?: {
     id: number;
@@ -25,6 +26,12 @@ interface ExtendedClient {
     first_name?: string;
     last_name?: string;
   }; // информация о привязанном тренере
+}
+
+function getClientPhotoSrc(client: ExtendedClient): string | null {
+  const first = client.photo_urls?.[0];
+  if (first && first.trim()) return first;
+  return null;
 }
 
 interface ChatMessage {
@@ -528,7 +535,7 @@ export default function AdminPage() {
                     >
                       <Flex justify="space-between" align="center">
                         <Flex align="center" gap="sm" style={{ flex: 1, minWidth: 0 }}>
-                          <Avatar size="sm" radius="xl">
+                          <Avatar size="sm" radius="xl" src={getClientPhotoSrc(client)}>
                             {(client.first_name?.charAt(0) || '') + (client.last_name?.charAt(0) || '')}
                           </Avatar>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -569,7 +576,7 @@ export default function AdminPage() {
                     >
                       <Flex justify="space-between" align="center">
                         <Flex align="center" gap="sm" style={{ flex: 1, minWidth: 0 }}>
-                          <Avatar size="sm" radius="xl">
+                          <Avatar size="sm" radius="xl" src={getClientPhotoSrc(client)}>
                             {(client.first_name?.charAt(0) || '') + (client.last_name?.charAt(0) || '')}
                           </Avatar>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -613,7 +620,7 @@ export default function AdminPage() {
                       >
                         <Flex justify="space-between" align="center">
                           <Flex align="center" gap="sm" style={{ flex: 1, minWidth: 0 }}>
-                            <Avatar size="sm" radius="xl">
+                            <Avatar size="sm" radius="xl" src={client.photo_urls?.[0] || null}>
                               {client.username.charAt(0).toUpperCase()}
                             </Avatar>
                             <div style={{ flex: 1, minWidth: 0 }}>

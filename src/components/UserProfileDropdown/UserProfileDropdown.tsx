@@ -6,6 +6,12 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+function getPhotoSrc(photoUrls?: string[]): string | null {
+  if (!photoUrls || photoUrls.length === 0) return null;
+  const first = photoUrls[0];
+  return first && first.trim() ? first : null;
+}
+
 export const UserProfileDropdown = () => {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -23,7 +29,7 @@ export const UserProfileDropdown = () => {
     <Menu shadow="md" width={220}>
       <Menu.Target>
         <Avatar
-          src={null} // Placeholder for user avatar
+          src={getPhotoSrc(user.photo_urls)}
           alt={user.username}
           radius="xl"
           size="md"

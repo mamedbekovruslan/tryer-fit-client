@@ -12,6 +12,7 @@ import {
   Button,
   Flex,
   Badge,
+  Avatar,
   Select,
   Checkbox,
   Pagination,
@@ -57,6 +58,12 @@ interface ProgressData {
     arms?: number;
     thighs?: number;
   };
+}
+
+function getClientPhotoSrc(client: Client | null): string | null {
+  const first = client?.photo_urls?.[0];
+  if (first && first.trim()) return first;
+  return null;
 }
 
 export default function ClientProfilePage() {
@@ -262,6 +269,17 @@ export default function ClientProfilePage() {
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Stack gap="md">
+                  <Flex justify="center" mb="md">
+                    <Avatar
+                      src={getClientPhotoSrc(client)}
+                      alt={client.username}
+                      radius="xl"
+                      size="xl"
+                    >
+                      {(client.first_name?.charAt(0) || '') + (client.last_name?.charAt(0) || '')}
+                    </Avatar>
+                  </Flex>
+
                   <Title order={3} ta="center">Информация о клиенте</Title>
 
                   <div>

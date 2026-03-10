@@ -11,7 +11,7 @@ export interface LoginHandler {
 export const useLogin = (): LoginHandler => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { login } = useAuth();
+  const { login, refreshUserProfile } = useAuth();
 
   const handleLogin = async (email: string, password: string, onSuccess?: (user: any) => void) => {
     setLoading(true);
@@ -22,6 +22,7 @@ export const useLogin = (): LoginHandler => {
 
       // Use the auth context to store the token and user data
       login(response.access_token, response.user);
+      await refreshUserProfile();
 
       // Call the success callback if provided, passing the user data
       if (onSuccess) {

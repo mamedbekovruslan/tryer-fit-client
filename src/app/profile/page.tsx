@@ -7,6 +7,12 @@ import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import Link from 'next/link';
 import { clientService } from '@/services/clientService';
 
+function getPhotoSrc(photoUrls?: string[]): string | null {
+  if (!photoUrls || photoUrls.length === 0) return null;
+  const first = photoUrls[0];
+  return first && first.trim() ? first : null;
+}
+
 export default function ProfilePage() {
   const { user, refreshUserProfile } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -65,9 +71,10 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    // Refresh user profile when the page loads
+    // Refresh user profile when the page loads if user is absent
+    // or if we only have short auth payload without profile fields.
     const loadProfile = async () => {
-      if (!user) {
+      if (!user || (user.user_type === 'client' && user.photo_urls === undefined)) {
         await refreshUserProfile();
       }
       setLoading(false);
@@ -121,7 +128,7 @@ export default function ProfilePage() {
               <Stack gap="md">
                 <Flex justify="center" mb="md">
                   <Avatar
-                    src={null} // Placeholder for user avatar
+                    src={getPhotoSrc(user.photo_urls)}
                     alt={user.username}
                     radius="xl"
                     size="xl"

@@ -52,6 +52,7 @@ export function ClientList({ clients, selectedClientId }: ClientListProps) {
                 <Avatar
                   size="md"
                   radius="xl"
+                  src={client.photo_urls?.[0] || null}
                   name={client.username}
                   color={getClientColor(client.userId)}
                 />

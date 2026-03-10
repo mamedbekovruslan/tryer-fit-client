@@ -173,6 +173,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: trainerProfile.email,
             username: trainerProfile.username,
             user_type: userProfile.user_type,
+            first_name: trainerProfile.first_name,
+            last_name: trainerProfile.last_name,
+            photo_urls: trainerProfile.photo_urls,
           };
           setUser(authUser);
           localStorage.setItem('user', JSON.stringify(authUser));
