@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Button, Notification } from '@mantine/core';
+import { Container, Title, Text, Paper, Stack, Card, Badge, SimpleGrid, Avatar, Flex, Button, Notification, FileInput } from '@mantine/core';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import Link from 'next/link';
@@ -36,7 +36,24 @@ export default function ProfilePage() {
     arm_circumference: user?.arm_circumference || undefined,
     leg_circumference: user?.leg_circumference || undefined,
     current_diet: user?.current_diet || '',
+    photo_urls: user?.photo_urls || [],
   });
+
+  const handleProfilePhotoChange = async (file: File | null) => {
+    if (!file) {
+      setFormData((prev) => ({ ...prev, photo_urls: [] }));
+      return;
+    }
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.readAsDataURL(file);
+    });
+
+    setFormData((prev) => ({ ...prev, photo_urls: [dataUrl] }));
+  };
 
   const handleSave = async () => {
     try {
@@ -128,7 +145,7 @@ export default function ProfilePage() {
               <Stack gap="md">
                 <Flex justify="center" mb="md">
                   <Avatar
-                    src={getPhotoSrc(user.photo_urls)}
+                    src={isEditing ? getPhotoSrc(formData.photo_urls) || getPhotoSrc(user.photo_urls) : getPhotoSrc(user.photo_urls)}
                     alt={user.username}
                     radius="xl"
                     size="xl"
@@ -160,6 +177,29 @@ export default function ProfilePage() {
                   <>
                     {isEditing ? (
                       <>
+                        <div>
+                          <Text size="sm" c="dimmed">Фото профиля</Text>
+                          <FileInput
+                            placeholder="Загрузить фото профиля"
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={handleProfilePhotoChange}
+                            mt="xs"
+                          />
+                          {formData.photo_urls[0] && (
+                            <Flex mt="sm" align="center" gap="sm">
+                              <Avatar src={formData.photo_urls[0]} radius="md" size="lg" />
+                              <Button
+                                variant="subtle"
+                                color="red"
+                                size="xs"
+                                onClick={() => setFormData((prev) => ({ ...prev, photo_urls: [] }))}
+                              >
+                                Удалить фото
+                              </Button>
+                            </Flex>
+                          )}
+                        </div>
+
                         <div>
                           <Text size="sm" c="dimmed">Имя</Text>
                           <input
@@ -410,6 +450,7 @@ export default function ProfilePage() {
                             arm_circumference: user?.arm_circumference || undefined,
                             leg_circumference: user?.leg_circumference || undefined,
                             current_diet: user?.current_diet || '',
+                            photo_urls: user?.photo_urls || [],
                           });
                           setIsEditing(true);
                         }}

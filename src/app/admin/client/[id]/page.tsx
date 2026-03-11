@@ -18,6 +18,7 @@ import {
   Pagination,
   Modal,
   TextInput,
+  Textarea,
   Box,
   Group,
   LoadingOverlay
@@ -28,25 +29,11 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { clientService, Client } from '@/services/clientService';
-
-// Типы данных
-interface Report {
-  id: number;
-  client_id: number;
-  date: string;
-  photo_url?: string;
-  comment?: string;
-  // другие поля отчета
-}
-
-interface Comment {
-  id: number;
-  report_id: number;
-  trainer_id: number;
-  comment: string;
-  created_at: string;
-  trainer_name: string;
-}
+import {
+  ProgressReport,
+  ProgressReportComment,
+  progressReportService,
+} from '@/services/progressReportService';
 
 interface ProgressData {
   date: string;
@@ -70,8 +57,7 @@ export default function ClientProfilePage() {
   const { id } = useParams();
   const { user } = useAuth();
   const [client, setClient] = useState<Client | null>(null);
-  const [reports, setReports] = useState<Report[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [reports, setReports] = useState<ProgressReport[]>([]);
   const [progressData, setProgressData] = useState<ProgressData[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'year' | 'custom'>('month');
   const [selectedParams, setSelectedParams] = useState<string[]>(['weight']);
@@ -84,100 +70,35 @@ export default function ClientProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Загружаем данные клиента
     const loadClientData = async () => {
       try {
         setLoading(true);
-        // Загружаем информацию о клиенте из базы данных
-        const clientData = await clientService.getClientById(Number(id));
+        setError(null);
+
+        const clientId = Number(id);
+        const [clientData, progressReports] = await Promise.all([
+          clientService.getClientById(clientId),
+          progressReportService.getTrainerClientProgressReports(clientId),
+        ]);
+
         setClient(clientData);
-
-        // Временно используем моковые данные для отчетов и прогресса
-        // В реальной реализации эти данные будут получаться из соответствующих сервисов
-        const mockReports: Report[] = [
-          {
-            id: 1,
-            client_id: Number(id),
-            date: '2024-12-01',
-            photo_url: 'https://placehold.co/300x300?text=Фото+отчета',
-            comment: 'Хороший прогресс!'
-          },
-          {
-            id: 2,
-            client_id: Number(id),
-            date: '2024-12-15',
-            photo_url: 'https://placehold.co/300x300?text=Фото+отчета',
-            comment: 'Продолжайте в том же духе'
-          },
-          {
-            id: 3,
-            client_id: Number(id),
-            date: '2025-01-01',
-            photo_url: 'https://placehold.co/300x300?text=Фото+отчета',
-            comment: 'Отличные результаты!'
-          }
-        ];
-
-        const mockComments: Comment[] = [
-          {
-            id: 1,
-            report_id: 1,
-            trainer_id: 1,
-            comment: 'Отличный старт! Продолжайте в том же духе.',
-            created_at: '2024-12-02T10:30:00Z',
-            trainer_name: 'Алексей Петров'
-          },
-          {
-            id: 2,
-            report_id: 1,
-            trainer_id: 1,
-            comment: 'Обратите внимание на питание.',
-            created_at: '2024-12-03T14:15:00Z',
-            trainer_name: 'Алексей Петров'
-          },
-          {
-            id: 3,
-            report_id: 2,
-            trainer_id: 1,
-            comment: 'Прогресс заметен!',
-            created_at: '2024-12-16T09:45:00Z',
-            trainer_name: 'Алексей Петров'
-          },
-          {
-            id: 4,
-            report_id: 2,
-            trainer_id: 1,
-            comment: 'Увеличьте нагрузку на ноги.',
-            created_at: '2024-12-17T11:20:00Z',
-            trainer_name: 'Алексей Петров'
-          },
-          {
-            id: 5,
-            report_id: 3,
-            trainer_id: 1,
-            comment: 'Отличные результаты!',
-            created_at: '2025-01-02T16:30:00Z',
-            trainer_name: 'Алексей Петров'
-          },
-          {
-            id: 6,
-            report_id: 3,
-            trainer_id: 1,
-            comment: 'Продолжайте работать над питанием.',
-            created_at: '2025-01-03T12:10:00Z',
-            trainer_name: 'Алексей Петров'
-          }
-        ];
-
-        const mockProgressData: ProgressData[] = [
-          { date: '2024-11-01', weight: 85, measurements: { chest: 100, waist: 90, hips: 105 } },
-          { date: '2024-12-01', weight: 82, measurements: { chest: 98, waist: 88, hips: 103 } },
-          { date: '2025-01-01', weight: 79, measurements: { chest: 96, waist: 86, hips: 101 } }
-        ];
-
-        setReports(mockReports);
-        setComments(mockComments);
-        setProgressData(mockProgressData);
+        setReports(progressReports);
+        setProgressData(
+          progressReports
+            .slice()
+            .reverse()
+            .map((report) => ({
+              date: new Date(report.date).toLocaleDateString('ru-RU'),
+              weight: report.weight,
+              measurements: {
+                chest: report.chest,
+                waist: report.waist,
+                hips: report.hips,
+                arms: report.arms,
+                thighs: report.thighs,
+              },
+            })),
+        );
       } catch (err) {
         setError('Ошибка загрузки данных клиента: ' + (err as Error).message);
         console.error('Error loading client data:', err);
@@ -191,26 +112,35 @@ export default function ClientProfilePage() {
     }
   }, [id]);
 
-  const handleAddComment = () => {
-    if (commentText.trim() && reportIdForComment) {
-      // В реальной реализации здесь будет вызов API
-      const newComment: Comment = {
-        id: comments.length + 1,
-        report_id: reportIdForComment,
-        trainer_id: 1,
-        comment: commentText,
-        created_at: new Date().toISOString(),
-        trainer_name: 'Алексей Петров'
-      };
+  const latestReport = reports[0] ?? null;
+  const latestComments = latestReport?.comments ?? [];
+  const handleAddComment = async () => {
+    if (!commentText.trim() || !reportIdForComment) {
+      return;
+    }
 
-      setComments([...comments, newComment]);
+    try {
+      const createdComment = await progressReportService.addProgressReportComment(reportIdForComment, {
+        comment: commentText.trim(),
+      });
+
+      setReports((currentReports) =>
+        currentReports.map((report) =>
+          report.id === reportIdForComment
+            ? { ...report, comments: [createdComment, ...(report.comments ?? [])] }
+            : report,
+        ),
+      );
       setCommentText('');
       setAddCommentModalOpen(false);
       setReportIdForComment(null);
+      setCurrentPage(1);
+    } catch (err) {
+      setError('Ошибка добавления комментария: ' + (err as Error).message);
     }
   };
 
-  const filteredComments = comments.filter(comment => comment.report_id === reports[0]?.id); // Показываем комментарии к последнему отчету
+  const filteredComments = latestComments;
   const commentsPerPage = 5;
   const totalPages = Math.ceil(filteredComments.length / commentsPerPage);
   const paginatedComments = filteredComments.slice(
@@ -343,21 +273,25 @@ export default function ClientProfilePage() {
                 {/* Последний отчет с фото */}
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Title order={3} mb="md">Последний отчет с фото</Title>
-                  {reports.length > 0 ? (
+                  {latestReport ? (
                     <div>
-                      <Text mb="sm">Дата: {reports[0].date}</Text>
+                      <Text mb="sm">
+                        Дата: {new Date(latestReport.date).toLocaleDateString('ru-RU')}
+                      </Text>
                       <img
-                        src={reports[0].photo_url || 'https://placehold.co/300x300?text=Фото+отсутствует'}
+                        src={latestReport.photoUrls?.[0] || 'https://placehold.co/300x300?text=Фото+отсутствует'}
                         alt="Отчет клиента"
                         style={{ width: '100%', maxWidth: '300px', borderRadius: '8px' }}
                       />
-                      <Text mt="sm">{reports[0].comment || 'Комментарий отсутствует'}</Text>
+                      <Text mt="sm">
+                        {latestReport.notes || 'Комментарий клиента к отчету отсутствует'}
+                      </Text>
 
                       <Button
                         variant="outline"
                         mt="md"
                         onClick={() => {
-                          setReportIdForComment(reports[0].id);
+                          setReportIdForComment(latestReport.id);
                           setAddCommentModalOpen(true);
                         }}
                       >
@@ -461,7 +395,7 @@ export default function ClientProfilePage() {
 
                 {/* Кнопка "Все отчеты" */}
                 <Flex justify="center">
-                  <Button variant="outline" size="lg">
+                  <Button variant="outline" size="lg" component={Link} href="/progress">
                     Все отчеты
                   </Button>
                 </Flex>
@@ -476,11 +410,14 @@ export default function ClientProfilePage() {
                         <Card key={comment.id} shadow="xs" padding="sm" radius="sm" withBorder>
                           <Flex justify="space-between" align="flex-start">
                             <div>
-                              <Text fw={500}>{comment.trainer_name}</Text>
+                              <Text fw={500}>
+                                {`${comment.trainer.first_name || ''} ${comment.trainer.last_name || ''}`.trim() ||
+                                  comment.trainer.username}
+                              </Text>
                               <Text>{comment.comment}</Text>
                             </div>
                             <Text size="xs" c="dimmed">
-                              {new Date(comment.created_at).toLocaleString('ru-RU')}
+                              {new Date(comment.createdAt).toLocaleString('ru-RU')}
                             </Text>
                           </Flex>
                         </Card>
@@ -494,7 +431,7 @@ export default function ClientProfilePage() {
                     <Flex justify="center" mt="md">
                       <Pagination
                         total={totalPages}
-                        page={currentPage}
+                        value={currentPage}
                         onChange={setCurrentPage}
                       />
                     </Flex>
@@ -516,12 +453,11 @@ export default function ClientProfilePage() {
         }}
         title="Добавить комментарий к отчету"
       >
-        <TextInput
+        <Textarea
           label="Комментарий"
           placeholder="Введите ваш комментарий..."
           value={commentText}
           onChange={(event) => setCommentText(event.currentTarget.value)}
-          multiline
           rows={4}
         />
         <Button

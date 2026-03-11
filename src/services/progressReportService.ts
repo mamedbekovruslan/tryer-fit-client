@@ -1,5 +1,18 @@
 import apiClient from '@/lib/api';
 
+export interface ProgressReportComment {
+  id: number;
+  comment: string;
+  createdAt: Date;
+  updatedAt: Date;
+  trainer: {
+    id: number;
+    username: string;
+    first_name?: string;
+    last_name?: string;
+  };
+}
+
 // Типы данных
 export interface ProgressReport {
   id: number;
@@ -21,6 +34,7 @@ export interface ProgressReport {
     username: string;
     email: string;
   };
+  comments?: ProgressReportComment[];
 }
 
 export interface CreateProgressReportRequest {
@@ -51,6 +65,10 @@ export interface UpdateProgressReportRequest {
   photoUrls?: string[];
 }
 
+export interface CreateProgressReportCommentRequest {
+  comment: string;
+}
+
 // Сервис для работы с отчетами о прогрессе
 export const progressReportService = {
   // Создание нового отчета о прогрессе
@@ -75,6 +93,16 @@ export const progressReportService = {
     }
   },
 
+  getTrainerClientProgressReports: async (clientId: number): Promise<ProgressReport[]> => {
+    try {
+      const response = await apiClient.get(`/progress-reports/client/${clientId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching progress reports for trainer client ${clientId}:`, error);
+      throw error;
+    }
+  },
+
   // Получение конкретного отчета о прогрессе
   getProgressReportById: async (id: number): Promise<ProgressReport> => {
     try {
@@ -82,6 +110,29 @@ export const progressReportService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching progress report:', error);
+      throw error;
+    }
+  },
+
+  getProgressReportComments: async (id: number): Promise<ProgressReportComment[]> => {
+    try {
+      const response = await apiClient.get(`/progress-reports/${id}/comments`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching comments for report ${id}:`, error);
+      throw error;
+    }
+  },
+
+  addProgressReportComment: async (
+    id: number,
+    payload: CreateProgressReportCommentRequest,
+  ): Promise<ProgressReportComment> => {
+    try {
+      const response = await apiClient.post(`/progress-reports/${id}/comments`, payload);
+      return response.data;
+    } catch (error) {
+      console.error(`Error adding comment to report ${id}:`, error);
       throw error;
     }
   },
