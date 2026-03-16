@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Title,
@@ -18,30 +18,31 @@ import {
   ActionIcon,
   Tooltip,
   LoadingOverlay,
-  Notification,
   Tabs,
-  Box,
   Divider,
   Select,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
-import { workoutService, WorkoutCategory, WorkoutProgram, ClientWorkoutProgram } from '@/services/workoutService';
-import { Client } from '@/services/clientService';
-import { trainerService } from '@/services/trainerService';
+import { workoutService, WorkoutCategory, WorkoutProgram } from '@/services/workoutService';
 import { useRouter } from 'next/navigation';
 import { FaPlus, FaEdit, FaTrash, FaDumbbell, FaUsers, FaList } from 'react-icons/fa';
+import { useTrainerWorkoutStore } from '@/stores/trainerWorkoutStore';
 
 export default function TrainerWorkoutPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<WorkoutCategory[]>([]);
-  const [programs, setPrograms] = useState<WorkoutProgram[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [activeTab, setActiveTab] = useState<string | null>('programs');
-  const [trainerId, setTrainerId] = useState<number | null>(null);
+  const loading = useTrainerWorkoutStore((state) => state.loading);
+  const categories = useTrainerWorkoutStore((state) => state.categories);
+  const programs = useTrainerWorkoutStore((state) => state.programs);
+  const clients = useTrainerWorkoutStore((state) => state.clients);
+  const activeTab = useTrainerWorkoutStore((state) => state.activeTab);
+  const trainerId = useTrainerWorkoutStore((state) => state.trainerId);
+  const setActiveTab = useTrainerWorkoutStore((state) => state.setActiveTab);
+  const loadTrainerWorkspace = useTrainerWorkoutStore(
+    (state) => state.loadTrainerWorkspace,
+  );
   
   // Modal states
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
@@ -58,63 +59,27 @@ export default function TrainerWorkoutPage() {
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
   const [programForm, setProgramForm] = useState({ name: '', description: '' });
 
-  useEffect(() => {
-    if (user && user.id) {
-      loadData();
-    }
-  }, [user, activeTab]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
-      setLoading(true);
-
       if (!user || user.user_type !== 'trainer') {
         return;
       }
 
-      // Всегда загружаем категории (нужны для создания программы)
-      const cats = await workoutService.getWorkoutCategories();
-      setCategories(cats);
-      
-      // Загружаем программы
-      const progs = await workoutService.getAllWorkoutPrograms();
-      setPrograms(progs);
-      
-      // Загружаем профиль тренера для получения ID
-      try {
-        const currentTrainerId = trainerId ?? user.id;
-        const trainerProfile = await trainerService.getMyTrainerProfile();
-        const resolvedTrainerId = trainerProfile.id || currentTrainerId;
-
-        setTrainerId(resolvedTrainerId);
-
-        // Загружаем клиентов тренера при каждом обновлении страницы
-        const trainerClients = await trainerService.getClientsByTrainerId(resolvedTrainerId);
-        setClients(trainerClients);
-      } catch (error) {
-        console.error('Error loading trainer profile:', error);
-
-        // Fallback на id из auth-контекста, если профиль тренера временно не загрузился
-        const fallbackTrainerId = trainerId ?? user.id;
-        if (fallbackTrainerId) {
-          try {
-            const trainerClients = await trainerService.getClientsByTrainerId(fallbackTrainerId);
-            setClients(trainerClients);
-          } catch (clientsError) {
-            console.error('Error loading trainer clients:', clientsError);
-          }
-        }
-      }
-    } catch (error) {
+      await loadTrainerWorkspace(trainerId ?? user.id);
+    } catch {
       notifications.show({
         title: 'Ошибка загрузки',
         message: 'Не удалось загрузить данные',
         color: 'red',
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [loadTrainerWorkspace, trainerId, user]);
+
+  useEffect(() => {
+    if (user && user.id) {
+      void loadData();
+    }
+  }, [activeTab, loadData, user]);
 
   // Category handlers
   const handleCreateCategory = async () => {
@@ -128,7 +93,7 @@ export default function TrainerWorkoutPage() {
       setCategoryModalOpen(false);
       setCategoryForm({ name: '', description: '' });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось создать категорию',
@@ -150,7 +115,7 @@ export default function TrainerWorkoutPage() {
       setEditingCategory(null);
       setCategoryForm({ name: '', description: '' });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось обновить категорию',
@@ -169,7 +134,7 @@ export default function TrainerWorkoutPage() {
         color: 'green',
       });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось удалить категорию',
@@ -208,7 +173,7 @@ export default function TrainerWorkoutPage() {
       setProgramForm({ name: '', description: '' });
       setSelectedCategoryForProgram(null);
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось создать программу',
@@ -230,7 +195,7 @@ export default function TrainerWorkoutPage() {
       setEditingProgram(null);
       setProgramForm({ name: '', description: '' });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось обновить программу',
@@ -249,7 +214,7 @@ export default function TrainerWorkoutPage() {
         color: 'green',
       });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось удалить программу',
@@ -286,7 +251,7 @@ export default function TrainerWorkoutPage() {
       setSelectedClientForAssign(null);
       setSelectedProgramForAssign(null);
       await loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось назначить программу',

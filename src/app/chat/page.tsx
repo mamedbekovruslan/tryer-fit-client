@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Box, Text, Center, Loader, Stack, Avatar } from '@mantine/core';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { chatService, ChatUser } from '@/services/chatService';
 import { ClientList } from '@/components/chat/ClientList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { useAuth } from '@/providers/AuthProvider';
+import { useChatStore } from '@/stores/chatStore';
 
 interface CurrentUser {
   id: number;
@@ -17,6 +17,8 @@ interface CurrentUser {
     username: string;
     first_name?: string;
     last_name?: string;
+    photo_urls?: string[];
+    photoUrls?: string[];
   } | null;
 }
 
@@ -25,11 +27,17 @@ export default function ChatPage() {
   const router = useRouter();
   const clientIdFromQuery = searchParams.get('clientId');
   const { user, isInitializing, isAuthenticated } = useAuth();
-
-  const [clients, setClients] = useState<ChatUser[]>([]);
-  const [isClientsLoading, setIsClientsLoading] = useState(true);
-  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const clients = useChatStore((state) => state.clients);
+  const isClientsLoading = useChatStore((state) => state.isClientsLoading);
+  const selectedClientId = useChatStore((state) => state.selectedClientId);
+  const setSelectedClientId = useChatStore((state) => state.setSelectedClientId);
+  const loadChats = useChatStore((state) => state.loadChats);
   const currentUser = user as CurrentUser | null;
+
+  const getPhotoUrl = (photoUrls?: string[]) => {
+    const firstPhoto = photoUrls?.[0];
+    return firstPhoto && firstPhoto.trim() ? firstPhoto : null;
+  };
 
   // Обновление selectedClientId при изменении query параметра
   useEffect(() => {
@@ -48,19 +56,17 @@ export default function ChatPage() {
     } else {
       setSelectedClientId(null);
     }
-  }, [clientIdFromQuery]);
+  }, [clientIdFromQuery, setSelectedClientId]);
 
   // Загрузка списка клиентов (для тренера)
   useEffect(() => {
     if (!currentUser || currentUser.user_type !== 'trainer') {
-      setIsClientsLoading(false);
       return;
     }
 
     const loadClients = async () => {
       try {
-        const data = await chatService.getUserChats();
-        setClients(data);
+        const data = await loadChats();
 
         // Если клиент не выбран, но есть клиенты в списке, выбираем первого
         if (!selectedClientId && data.length > 0) {
@@ -70,13 +76,11 @@ export default function ChatPage() {
         }
       } catch (error) {
         console.error('[ChatPage] Error loading clients:', error);
-      } finally {
-        setIsClientsLoading(false);
       }
     };
 
-    loadClients();
-  }, [currentUser, selectedClientId, router]);
+    void loadClients();
+  }, [currentUser, loadChats, router, selectedClientId, setSelectedClientId]);
 
   // Находим информацию о выбранном клиенте
   const selectedClient = useMemo(
@@ -115,6 +119,10 @@ export default function ChatPage() {
             `${currentUser.trainer.first_name || ''} ${currentUser.trainer.last_name || ''}`.trim() ||
             currentUser.trainer.username
           }
+          otherUserPhotoUrl={
+            getPhotoUrl(currentUser.trainer.photo_urls) ??
+            getPhotoUrl(currentUser.trainer.photoUrls)
+          }
           currentUserId={currentUser.id}
           currentUserType="client"
         />
@@ -148,7 +156,7 @@ export default function ChatPage() {
               Клиенты
             </Text>
           </Box>
-          <ClientList clients={clients} selectedClientId={selectedClientId} />
+          <ClientList clients={clients} />
         </Box>
 
         {/* Окно чата */}
@@ -157,6 +165,10 @@ export default function ChatPage() {
             <ChatWindow
               otherUserId={selectedClientId}
               otherUserUsername={selectedClient.username}
+              otherUserPhotoUrl={
+                getPhotoUrl(selectedClient.photo_urls) ??
+                getPhotoUrl(selectedClient.photoUrls)
+              }
               currentUserId={currentUser.id}
               currentUserType="trainer"
             />

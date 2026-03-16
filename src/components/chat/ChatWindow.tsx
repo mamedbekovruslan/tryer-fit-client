@@ -1,112 +1,85 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { Box, Stack, Center, Loader, Text } from '@mantine/core';
 import { useChatSocket } from '@/hooks/useChatSocket';
-import { chatService, ChatMessage } from '@/services/chatService';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { ChatHeader } from './ChatHeader';
+import { useChatStore } from '@/stores/chatStore';
+import { type ChatMessage } from '@/services/chatService';
 
 interface ChatWindowProps {
   otherUserId: number;
   otherUserUsername: string;
   currentUserId: number;
   currentUserType: 'client' | 'trainer';
+  otherUserPhotoUrl?: string | null;
 }
+
+const EMPTY_MESSAGES: ChatMessage[] = [];
 
 export function ChatWindow({
   otherUserId,
   otherUserUsername,
   currentUserId,
   currentUserType,
+  otherUserPhotoUrl,
 }: ChatWindowProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
-  const [connectionAttempted, setConnectionAttempted] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentOtherUserIdRef = useRef<number>(otherUserId);
+  const messages = useChatStore(
+    useCallback(
+      (state) => state.messagesByUserId[otherUserId] ?? EMPTY_MESSAGES,
+      [otherUserId],
+    ),
+  );
+  const isLoading = useChatStore(
+    useCallback(
+      (state) => state.loadingConversations[otherUserId] ?? false,
+      [otherUserId],
+    ),
+  );
+  const isTyping = useChatStore(
+    useCallback(
+      (state) => state.typingByUserId[otherUserId] ?? false,
+      [otherUserId],
+    ),
+  );
+  const connectionAttempted = useChatStore((state) => state.connectionAttempted);
+  const loadConversation = useChatStore((state) => state.loadConversation);
+  const setTyping = useChatStore((state) => state.setTyping);
 
   const { sendMessage, markAsRead, sendTypingStatus, isConnected } = useChatSocket({
     onMessage: (message) => {
-      console.log('[ChatWindow] Received message:', message);
-      setMessages((prev) => {
-        // Проверяем, не дубликат ли это
-        const exists = prev.some(m => m.id === message.id);
-        if (exists) return prev;
-        return [...prev, message];
-      });
-      // Помечаем сообщения как прочитанные автоматически
       if (message.senderId !== currentUserId) {
         markAsRead(message.senderId);
       }
     },
-    onMessageSent: (message) => {
-      console.log('[ChatWindow] Message sent confirmation:', message);
-      setMessages((prev) => {
-        // Проверяем, не дубликат ли это
-        const exists = prev.some(m => m.id === message.id);
-        if (exists) return prev;
-        return [...prev, message];
-      });
-    },
     onUserTyping: (data) => {
       if (data.senderId === otherUserId) {
-        setIsTyping(data.isTyping);
+        setTyping(data.senderId, data.isTyping);
       }
-    },
-    onConnected: (data) => {
-      console.log('[ChatWindow] Connected:', data);
-      setConnectionAttempted(true);
     },
   });
 
   // Отслеживаем смену собеседника
   useEffect(() => {
     if (currentOtherUserIdRef.current !== otherUserId) {
-      console.log('[ChatWindow] Changing conversation from', currentOtherUserIdRef.current, 'to', otherUserId);
       currentOtherUserIdRef.current = otherUserId;
-      setMessages([]);
-      setIsLoading(true);
     }
   }, [otherUserId]);
 
   // Загрузка истории переписки
   useEffect(() => {
-    const loadMessages = async () => {
-      console.log('[ChatWindow] Loading messages for user:', otherUserId);
-      setIsLoading(true);
-      try {
-        const data = await chatService.getConversation(otherUserId, 100, 0);
-        console.log('[ChatWindow] Loaded messages:', data.length);
-        setMessages(data);
-
-        // Помечаем сообщения как прочитанные
-        const unreadMessages = data.filter(
-          (m) => m.senderId !== currentUserId && !m.isRead
-        );
-        if (unreadMessages.length > 0) {
-          console.log('[ChatWindow] Marking', unreadMessages.length, 'messages as read');
-          await chatService.markMessagesAsRead(otherUserId);
-        }
-      } catch (error) {
-        console.error('[ChatWindow] Error loading messages:', error);
-      } finally {
-        setIsLoading(false);
-        setConnectionAttempted(true);
-      }
-    };
-
     if (otherUserId) {
-      loadMessages();
+      void loadConversation(otherUserId, currentUserId);
     }
-  }, [otherUserId, currentUserId]);
+  }, [currentUserId, loadConversation, otherUserId]);
 
   // Отправка сообщения
   const handleSendMessage = useCallback(
     (message: string) => {
-      console.log('[ChatWindow] Sending message:', message);
       sendMessage(otherUserId, currentUserType, message);
     },
     [sendMessage, otherUserId, currentUserType]
@@ -122,9 +95,9 @@ export function ChatWindow({
 
     typingTimeoutRef.current = setTimeout(() => {
       sendTypingStatus(otherUserId, false);
-      setIsTyping(false);
+      setTyping(otherUserId, false);
     }, 1000);
-  }, [sendTypingStatus, otherUserId]);
+  }, [otherUserId, sendTypingStatus, setTyping]);
 
   return (
     <Stack gap={0} style={{ flex: 1, height: '100%', padding: '32px' }}>
@@ -133,6 +106,7 @@ export function ChatWindow({
         userId={otherUserId}
         isConnected={isConnected}
         isTyping={isTyping}
+        photoUrl={otherUserPhotoUrl}
       />
 
       <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

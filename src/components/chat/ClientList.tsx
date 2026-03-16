@@ -3,17 +3,20 @@
 import { Box, Text, Avatar, Badge, Group, Stack, ScrollArea } from '@mantine/core';
 import { ChatUser } from '@/services/chatService';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useChatStore } from '@/stores/chatStore';
 
 interface ClientListProps {
   clients: ChatUser[];
-  selectedClientId?: number | null;
 }
 
-export function ClientList({ clients, selectedClientId }: ClientListProps) {
+export function ClientList({ clients }: ClientListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const selectedClientId = useChatStore((state) => state.selectedClientId);
+  const setSelectedClientId = useChatStore((state) => state.setSelectedClientId);
 
   const handleSelectClient = (clientId: number) => {
+    setSelectedClientId(clientId);
     const params = new URLSearchParams(searchParams.toString());
     params.set('clientId', clientId.toString());
     router.push(`/chat?${params.toString()}`);

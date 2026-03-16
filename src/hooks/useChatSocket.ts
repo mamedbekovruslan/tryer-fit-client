@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ChatMessage } from '@/services/chatService';
 import { useAuth } from '@/providers/AuthProvider';
+import { useChatStore } from '@/stores/chatStore';
 
 interface UseChatSocketOptions {
   onMessage?: (message: ChatMessage) => void;
@@ -17,9 +18,12 @@ interface UseChatSocketOptions {
 export function useChatSocket(options: UseChatSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
   const optionsRef = useRef(options);
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const { isAuthenticated, isInitializing } = useAuth();
+  const { user, isAuthenticated, isInitializing } = useAuth();
+  const isConnected = useChatStore((state) => state.isConnected);
+  const setConnectionStatus = useChatStore((state) => state.setConnectionStatus);
+  const setConnectionAttempted = useChatStore((state) => state.setConnectionAttempted);
+  const setTyping = useChatStore((state) => state.setTyping);
+  const applyMessagesRead = useChatStore((state) => state.applyMessagesRead);
 
   useEffect(() => {
     optionsRef.current = options;
@@ -45,29 +49,37 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
-    setSocket(socketRef.current);
 
     socketRef.current.on('connect', () => {
-      setIsConnected(true);
+      setConnectionStatus(true);
     });
 
     socketRef.current.on('connected', (data) => {
+      setConnectionAttempted(true);
       optionsRef.current.onConnected?.(data);
     });
 
     socketRef.current.on('receiveMessage', (message: ChatMessage) => {
+      if (user?.id) {
+        useChatStore.getState().receiveMessage(message, user.id);
+      }
       optionsRef.current.onMessage?.(message);
     });
 
     socketRef.current.on('messageSent', (message: ChatMessage) => {
+      if (user?.id) {
+        useChatStore.getState().receiveSentMessage(message, user.id);
+      }
       optionsRef.current.onMessageSent?.(message);
     });
 
-    socketRef.current.on('messagesRead', (data) => {
+    socketRef.current.on('messagesRead', (data: { userId: number; senderId: number }) => {
+      applyMessagesRead(data.userId);
       optionsRef.current.onMessagesRead?.(data);
     });
 
-    socketRef.current.on('userTyping', (data) => {
+    socketRef.current.on('userTyping', (data: { senderId: number; senderType: string; isTyping: boolean }) => {
+      setTyping(data.senderId, data.isTyping);
       optionsRef.current.onUserTyping?.(data);
     });
 
@@ -76,11 +88,11 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
     });
 
     socketRef.current.on('disconnect', () => {
-      setIsConnected(false);
+      setConnectionStatus(false);
     });
 
     socketRef.current.on('reconnect', () => {
-      setIsConnected(true);
+      setConnectionStatus(true);
     });
 
     socketRef.current.on('reconnect_error', (error) => {
@@ -90,17 +102,24 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
     return () => {
       // Не отключаем сокет при размонтировании, чтобы сохранить подключение при навигации.
     };
-  }, [isAuthenticated, isInitializing]);
+  }, [
+    applyMessagesRead,
+    isAuthenticated,
+    isInitializing,
+    setConnectionAttempted,
+    setConnectionStatus,
+    setTyping,
+    user?.id,
+  ]);
 
   // Отдельный эффект для очистки подключения при размонтировании всего приложения
   useEffect(() => {
     if (!isInitializing && !isAuthenticated && socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;
-      setSocket(null);
-      setIsConnected(false);
+      setConnectionStatus(false);
     }
-  }, [isAuthenticated, isInitializing]);
+  }, [isAuthenticated, isInitializing, setConnectionStatus]);
 
   const sendMessage = useCallback((receiverId: number, senderType: 'client' | 'trainer', message: string) => {
     if (socketRef.current?.connected) {
@@ -125,7 +144,6 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
   }, []);
 
   return {
-    socket,
     sendMessage,
     markAsRead,
     sendTypingStatus,

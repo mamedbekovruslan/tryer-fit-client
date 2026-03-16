@@ -8,6 +8,7 @@ interface ChatHeaderProps {
   isConnected: boolean;
   isTyping?: boolean;
   lastSeen?: Date;
+  photoUrl?: string | null;
 }
 
 export function ChatHeader({
@@ -16,6 +17,7 @@ export function ChatHeader({
   isConnected,
   isTyping,
   lastSeen,
+  photoUrl,
 }: ChatHeaderProps) {
   return (
     <Box
@@ -29,6 +31,7 @@ export function ChatHeader({
         <Avatar
           size="md"
           radius="xl"
+          src={photoUrl}
           name={username}
           color={getClientColor(userId)}
         />

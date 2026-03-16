@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Title,
@@ -17,27 +17,29 @@ import {
   Tooltip,
   LoadingOverlay,
   NumberInput,
-  Box,
   Divider,
   Badge,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
-import { workoutService, WorkoutDay, Exercise, WorkoutProgram } from '@/services/workoutService';
+import { workoutService, WorkoutDay, Exercise } from '@/services/workoutService';
 import { useRouter, useParams } from 'next/navigation';
 import { FaPlus, FaEdit, FaTrash, FaArrowLeft, FaDumbbell } from 'react-icons/fa';
+import { useTrainerWorkoutStore } from '@/stores/trainerWorkoutStore';
 
 export default function WorkoutProgramDaysPage() {
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
   const programId = parseInt(params.programId as string);
-  
-  const [loading, setLoading] = useState(true);
-  const [program, setProgram] = useState<WorkoutProgram | null>(null);
-  const [days, setDays] = useState<WorkoutDay[]>([]);
-  const [exercisesByDay, setExercisesByDay] = useState<{ [key: number]: Exercise[] }>({});
+  const loading = useTrainerWorkoutStore((state) => state.loading);
+  const program = useTrainerWorkoutStore((state) => state.program);
+  const days = useTrainerWorkoutStore((state) => state.days);
+  const exercisesByDay = useTrainerWorkoutStore((state) => state.exercisesByDay);
+  const loadProgramDetails = useTrainerWorkoutStore(
+    (state) => state.loadProgramDetails,
+  );
   
   // Modal states
   const [dayModalOpen, setDayModalOpen] = useState(false);
@@ -57,49 +59,27 @@ export default function WorkoutProgramDaysPage() {
     exerciseOrder: 0,
   });
 
-  useEffect(() => {
-    if (user && user.id) {
-      loadData();
-    }
-  }, [user, programId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
-      setLoading(true);
-      // Загружаем программу
-      try {
-        const prog = await workoutService.getWorkoutProgramById(programId);
-        setProgram(prog);
-      } catch (e) {
+      const loadedProgram = await loadProgramDetails(programId);
+      if (!loadedProgram) {
         notifications.show({
           title: 'Ошибка',
           message: 'Программа не найдена',
           color: 'red',
         });
         router.push('/trainer/workout');
-        return;
       }
-      
-      // Загружаем дни
-      const daysData = await workoutService.getWorkoutDaysByProgram(programId);
-      setDays(daysData);
-      
-      // Загружаем упражнения для каждого дня
-      const exercisesData: { [key: number]: Exercise[] } = {};
-      for (const day of daysData) {
-        try {
-          exercisesData[day.id] = await workoutService.getExercisesByDay(day.id);
-        } catch (e) {
-          exercisesData[day.id] = [];
-        }
-      }
-      setExercisesByDay(exercisesData);
-    } catch (error) {
+    } catch {
       console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [loadProgramDetails, programId, router]);
+
+  useEffect(() => {
+    if (user && user.id) {
+      void loadData();
+    }
+  }, [loadData, programId, user]);
 
   // Day handlers
   const handleCreateDay = async () => {
@@ -116,7 +96,7 @@ export default function WorkoutProgramDaysPage() {
       setDayModalOpen(false);
       setDayForm({ name: '', description: '', dayOrder: 0 });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось создать день тренировки',
@@ -138,7 +118,7 @@ export default function WorkoutProgramDaysPage() {
       setEditingDay(null);
       setDayForm({ name: '', description: '', dayOrder: 0 });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось обновить день тренировки',
@@ -157,7 +137,7 @@ export default function WorkoutProgramDaysPage() {
         color: 'green',
       });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось удалить день тренировки',
@@ -208,7 +188,7 @@ export default function WorkoutProgramDaysPage() {
       });
       setSelectedDayForExercise(null);
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось создать упражнение',
@@ -238,7 +218,7 @@ export default function WorkoutProgramDaysPage() {
         exerciseOrder: 0,
       });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось обновить упражнение',
@@ -256,7 +236,7 @@ export default function WorkoutProgramDaysPage() {
         color: 'green',
       });
       loadData();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: 'Ошибка',
         message: 'Не удалось удалить упражнение',
