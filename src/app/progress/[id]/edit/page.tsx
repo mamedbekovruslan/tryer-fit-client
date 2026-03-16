@@ -1,263 +1,232 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Button, Group, TextInput, NumberInput, Select, Textarea, Alert } from '@mantine/core';
+import { useEffect, useState } from 'react';
+import { Alert, Button, Container, Group, NumberInput, Paper, Text, Textarea, Title } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { useParams } from 'next/navigation';
-import { useAuth } from '@/providers/AuthProvider';
+import { useParams, useRouter } from 'next/navigation';
+import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
+import {
+  progressReportService,
+  ProgressReport,
+  UpdateProgressReportRequest,
+} from '@/services/progressReportService';
 
-// Типы данных
-interface ProgressReport {
+interface EditableReport {
   id: number;
-  date: Date;
-  weight: number;
-  bodyFat: number;
-  muscleMass: number;
-  measurements: {
-    chest: number;
-    waist: number;
-    hips: number;
-    arms: number;
-    thighs: number;
-  };
+  date: Date | null;
+  weight?: number;
+  bodyFat?: number;
+  muscleMass?: number;
+  chest?: number;
+  waist?: number;
+  hips?: number;
+  arms?: number;
+  thighs?: number;
   notes: string;
-  trainerComment: string | null;
 }
 
-// Моковые данные
-const mockReport: ProgressReport = {
-  id: 1,
-  date: new Date('2024-04-25'),
-  weight: 77,
-  bodyFat: 17,
-  muscleMass: 36.5,
-  measurements: {
-    chest: 103,
-    waist: 81.5,
-    hips: 92,
-    arms: 36.5,
-    thighs: 53.5
-  },
-  notes: 'Хороший прогресс за последний месяц!',
-  trainerComment: 'Отличные результаты! Продолжайте в том же духе перед соревнованиями.'
-};
+function normalizeDateValue(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}
+
+function toEditableReport(report: ProgressReport): EditableReport {
+  return {
+    id: report.id,
+    date: new Date(report.date),
+    weight: report.weight,
+    bodyFat: report.bodyFat,
+    muscleMass: report.muscleMass,
+    chest: report.chest,
+    waist: report.waist,
+    hips: report.hips,
+    arms: report.arms,
+    thighs: report.thighs,
+    notes: report.notes || '',
+  };
+}
 
 export default function EditReportPage() {
-  const { user } = useAuth();
   const params = useParams();
-  const reportId = params.id as string;
-  
-  const [reportData, setReportData] = useState<ProgressReport | null>(null);
+  const router = useRouter();
+  const reportId = Number(params.id);
+
+  const [reportData, setReportData] = useState<EditableReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // В реальном приложении здесь будет запрос к API для получения данных отчета
-    // Сейчас используем моковые данные
-    setTimeout(() => {
-      setReportData(mockReport);
+    const loadReport = async () => {
+      try {
+        setLoading(true);
+        const report = await progressReportService.getProgressReportById(reportId);
+        setReportData(toEditableReport(report));
+      } catch (err) {
+        console.error(err);
+        setError('Не удалось загрузить отчет');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (Number.isFinite(reportId)) {
+      void loadReport();
+    } else {
       setLoading(false);
-    }, 500);
+      setError('Некорректный идентификатор отчета');
+    }
   }, [reportId]);
 
-  const handleChange = (field: string, value: any) => {
-    if (!reportData) return;
-    
-    if (field.includes('.')) {
-      // Обработка вложенных полей (например, measurements.chest)
-      const [parent, child] = field.split('.');
-      setReportData(prev => ({
-        ...prev!,
-        [parent]: {
-          ...(prev![parent as keyof ProgressReport] as object),
-          [child]: value
-        }
-      }));
-    } else {
-      setReportData(prev => ({
-        ...prev!,
-        [field]: value
-      }));
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!reportData) return;
-    
-    // Валидация
+
     if (!reportData.date) {
       setError('Дата обязательна');
       return;
     }
-    
-    if (reportData.weight <= 0) {
+
+    if (!reportData.weight || reportData.weight <= 0) {
       setError('Введите корректный вес');
       return;
     }
-    
-    // Здесь будет логика отправки данных на сервер
-    console.log('Отправка обновленных данных:', reportData);
-    
-    // Показ сообщения об успехе
-    setSuccess(true);
-    setError('');
+
+    try {
+      setSaving(true);
+      setError('');
+
+      const payload: UpdateProgressReportRequest = {
+        date: reportData.date,
+        weight: reportData.weight,
+        bodyFat: reportData.bodyFat,
+        muscleMass: reportData.muscleMass,
+        chest: reportData.chest,
+        waist: reportData.waist,
+        hips: reportData.hips,
+        arms: reportData.arms,
+        thighs: reportData.thighs,
+        notes: reportData.notes,
+      };
+
+      await progressReportService.updateProgressReport(reportData.id, payload);
+      setSuccess(true);
+      setTimeout(() => router.push(`/progress/${reportData.id}`), 800);
+    } catch (err) {
+      console.error(err);
+      setError('Не удалось сохранить изменения');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (loading) {
-    return (
-      <UserTypeProtectedRoute allowedUserTypes={['client']}>
-        <Container size="md" py="xl">
-          <Paper shadow="md" p="xl" radius="md" style={{ textAlign: 'center' }}>
-            <Text>Загрузка отчета...</Text>
-          </Paper>
-        </Container>
-      </UserTypeProtectedRoute>
-    );
-  }
-
-  if (!reportData) {
-    return (
-      <Container size="md" py="xl">
-        <Paper shadow="md" p="xl" radius="md" style={{ textAlign: 'center' }}>
-          <Text>Отчет не найден</Text>
-        </Paper>
-      </Container>
-    );
-  }
-
   return (
-    <Container size="md" py="xl">
-      <Paper shadow="md" p="xl" radius="md">
-        <Group justify="space-between" mb="lg">
-          <Title order={2}>Редактировать отчет от {reportData.date.toLocaleDateString()}</Title>
-        </Group>
-          
-          {success && (
-            <Alert title="Успешно" color="green" mb="lg">
-              Отчет о прогрессе успешно обновлен!
-            </Alert>
+    <UserTypeProtectedRoute allowedUserTypes={['client']}>
+      <Container size="md" py="xl">
+        <Paper shadow="md" p="xl" radius="md">
+          {loading ? (
+            <Text ta="center">Загрузка отчета...</Text>
+          ) : !reportData ? (
+            <Text ta="center">{error || 'Отчет не найден'}</Text>
+          ) : (
+            <>
+              <Title order={2} mb="lg">
+                Редактировать отчет от {reportData.date?.toLocaleDateString('ru-RU')}
+              </Title>
+
+              {success && (
+                <Alert title="Успешно" color="green" mb="lg">
+                  Отчет о прогрессе успешно обновлен
+                </Alert>
+              )}
+
+              {error && (
+                <Alert title="Ошибка" color="red" mb="lg">
+                  {error}
+                </Alert>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <DatePickerInput
+                  label="Дата"
+                  placeholder="Выберите дату"
+                  value={reportData.date}
+                  onChange={(date) =>
+                    setReportData((prev) =>
+                      prev ? { ...prev, date: normalizeDateValue(date) } : prev,
+                    )
+                  }
+                  required
+                  mb="md"
+                />
+
+                <NumberInput
+                  label="Вес (кг)"
+                  placeholder="Введите вес"
+                  value={reportData.weight}
+                  onChange={(value) => setReportData((prev) => (prev ? { ...prev, weight: typeof value === 'number' ? value : undefined } : prev))}
+                  min={0}
+                  mb="md"
+                />
+
+                <NumberInput
+                  label="Процент жира (%)"
+                  placeholder="Введите процент жира"
+                  value={reportData.bodyFat}
+                  onChange={(value) => setReportData((prev) => (prev ? { ...prev, bodyFat: typeof value === 'number' ? value : undefined } : prev))}
+                  min={0}
+                  mb="md"
+                />
+
+                <NumberInput
+                  label="Мышечная масса (кг)"
+                  placeholder="Введите мышечную массу"
+                  value={reportData.muscleMass}
+                  onChange={(value) => setReportData((prev) => (prev ? { ...prev, muscleMass: typeof value === 'number' ? value : undefined } : prev))}
+                  min={0}
+                  mb="md"
+                />
+
+                <Group grow mb="md">
+                  <NumberInput label="Грудь" value={reportData.chest} onChange={(value) => setReportData((prev) => (prev ? { ...prev, chest: typeof value === 'number' ? value : undefined } : prev))} min={0} />
+                  <NumberInput label="Талия" value={reportData.waist} onChange={(value) => setReportData((prev) => (prev ? { ...prev, waist: typeof value === 'number' ? value : undefined } : prev))} min={0} />
+                  <NumberInput label="Бедра" value={reportData.hips} onChange={(value) => setReportData((prev) => (prev ? { ...prev, hips: typeof value === 'number' ? value : undefined } : prev))} min={0} />
+                </Group>
+
+                <Group grow mb="md">
+                  <NumberInput label="Руки" value={reportData.arms} onChange={(value) => setReportData((prev) => (prev ? { ...prev, arms: typeof value === 'number' ? value : undefined } : prev))} min={0} />
+                  <NumberInput label="Бедра (ноги)" value={reportData.thighs} onChange={(value) => setReportData((prev) => (prev ? { ...prev, thighs: typeof value === 'number' ? value : undefined } : prev))} min={0} />
+                </Group>
+
+                <Textarea
+                  label="Комментарии"
+                  placeholder="Введите дополнительные комментарии"
+                  value={reportData.notes}
+                  onChange={(event) => setReportData((prev) => (prev ? { ...prev, notes: event.currentTarget.value } : prev))}
+                  minRows={4}
+                  mb="md"
+                />
+
+                <Group justify="space-between" mt="xl">
+                  <Button component="a" href={`/progress/${reportData.id}`} variant="outline">
+                    Отмена
+                  </Button>
+                  <Button type="submit" loading={saving}>
+                    Сохранить изменения
+                  </Button>
+                </Group>
+              </form>
+            </>
           )}
-          
-          {error && (
-            <Alert title="Ошибка" color="red" mb="lg">
-              {error}
-            </Alert>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <DatePickerInput
-              label="Дата"
-              placeholder="Выберите дату"
-              value={reportData.date}
-              onChange={(date) => handleChange('date', date)}
-              required
-              mb="md"
-            />
-
-            <NumberInput
-              label="Вес (кг)"
-              placeholder="Введите вес"
-              value={reportData.weight}
-              onChange={(value) => handleChange('weight', value)}
-              min={0}
-              max={300}
-              required
-              mb="md"
-            />
-
-            <NumberInput
-              label="Процент жира (%)"
-              placeholder="Введите процент жира"
-              value={reportData.bodyFat}
-              onChange={(value) => handleChange('bodyFat', value)}
-              min={0}
-              max={100}
-              mb="md"
-            />
-
-            <NumberInput
-              label="Мышечная масса (кг)"
-              placeholder="Введите мышечную массу"
-              value={reportData.muscleMass}
-              onChange={(value) => handleChange('muscleMass', value)}
-              min={0}
-              max={300}
-              mb="md"
-            />
-
-            <Title order={4} mb="md">Измерения (см)</Title>
-            
-            <Group grow mb="md">
-              <NumberInput
-                label="Грудь"
-                placeholder="Грудь"
-                value={reportData.measurements.chest}
-                onChange={(value) => handleChange('measurements.chest', value)}
-                min={0}
-                max={300}
-              />
-              
-              <NumberInput
-                label="Талия"
-                placeholder="Талия"
-                value={reportData.measurements.waist}
-                onChange={(value) => handleChange('measurements.waist', value)}
-                min={0}
-                max={300}
-              />
-              
-              <NumberInput
-                label="Бедра"
-                placeholder="Бедра"
-                value={reportData.measurements.hips}
-                onChange={(value) => handleChange('measurements.hips', value)}
-                min={0}
-                max={300}
-              />
-            </Group>
-            
-            <Group grow mb="md">
-              <NumberInput
-                label="Руки"
-                placeholder="Руки"
-                value={reportData.measurements.arms}
-                onChange={(value) => handleChange('measurements.arms', value)}
-                min={0}
-                max={300}
-              />
-              
-              <NumberInput
-                label="Бедра (ноги)"
-                placeholder="Бедра (ноги)"
-                value={reportData.measurements.thighs}
-                onChange={(value) => handleChange('measurements.thighs', value)}
-                min={0}
-                max={300}
-              />
-            </Group>
-
-            <Textarea
-              label="Комментарии"
-              placeholder="Введите дополнительные комментарии"
-              value={reportData.notes}
-              onChange={(value) => handleChange('notes', value)}
-              mb="md"
-              minRows={4}
-            />
-
-            <Group justify="space-between" mt="xl">
-              <Button component="a" href={`/progress/${reportData.id}`} variant="outline">
-                Отмена
-              </Button>
-              <Button type="submit" variant="filled">
-                Сохранить изменения
-              </Button>
-            </Group>
-          </form>
         </Paper>
       </Container>
+    </UserTypeProtectedRoute>
   );
 }

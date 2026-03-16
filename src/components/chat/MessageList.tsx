@@ -16,7 +16,6 @@ interface MessageListProps {
 export function MessageList({
   messages,
   currentUserId,
-  currentUserType,
   otherUserId,
   otherUserUsername,
   isLoading,
@@ -109,7 +108,7 @@ export function MessageList({
 }
 
 interface ScrollRefProps {
-  scrollRef: React.RefObject<HTMLDivElement>;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
   children: React.ReactNode;
 }
 

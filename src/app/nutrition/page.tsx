@@ -135,8 +135,7 @@ function NutritionPlanDetails({ nutritionPlan }: { nutritionPlan: any }) {
     try {
       setLoading(true);
 
-      // Используем информацию о категории из переданного плана
-      const days = await nutritionService.getNutritionDaysByCategory(nutritionPlan.nutritionCategory.id);
+      const days = await nutritionService.getNutritionDaysByPlan(nutritionPlan.id);
 
       setNutritionDays(days);
 

@@ -1,4 +1,5 @@
 import apiClient from '@/lib/api';
+import { normalizeChatUser } from './modelAdapters';
 
 export interface ChatMessage {
   id: number;
@@ -16,6 +17,7 @@ export interface ChatUser {
   username: string;
   email?: string;
   photo_urls?: string[];
+  photoUrls?: string[];
   lastMessage?: ChatMessage;
   unreadCount: number;
 }
@@ -31,10 +33,7 @@ export const chatService = {
       if (offset) params.append('offset', offset.toString());
 
       const url = `/chat/messages/${userId}${params.toString() ? `?${params.toString()}` : ''}`;
-      console.log('[chatService] getConversation URL:', url);
-      
       const response = await apiClient.get<ChatMessage[]>(url);
-      console.log('[chatService] getConversation response:', response.data);
       return response.data;
     } catch (error) {
       console.error('[chatService] Error fetching conversation:', error);
@@ -47,10 +46,11 @@ export const chatService = {
    */
   getUserChats: async (): Promise<ChatUser[]> => {
     try {
-      console.log('[chatService] getUserChats - calling API');
       const response = await apiClient.get<ChatUser[]>('/chat/chats');
-      console.log('[chatService] getUserChats response:', response.data);
-      return response.data;
+      return response.data.map(
+        (user) =>
+          normalizeChatUser(user as unknown as Record<string, unknown>) as unknown as ChatUser,
+      );
     } catch (error) {
       console.error('[chatService] Error fetching user chats:', error);
       throw error;
@@ -66,13 +66,11 @@ export const chatService = {
     message: string
   ): Promise<ChatMessage> => {
     try {
-      console.log('[chatService] sendMessage:', { receiverId, senderType, message });
       const response = await apiClient.post<ChatMessage>('/chat/messages', {
         receiverId,
         senderType,
         message,
       });
-      console.log('[chatService] sendMessage response:', response.data);
       return response.data;
     } catch (error) {
       console.error('[chatService] Error sending message:', error);
@@ -85,7 +83,6 @@ export const chatService = {
    */
   markMessagesAsRead: async (senderId: number): Promise<void> => {
     try {
-      console.log('[chatService] markMessagesAsRead:', senderId);
       await apiClient.patch(`/chat/messages/${senderId}/read`);
     } catch (error) {
       console.error('[chatService] Error marking messages as read:', error);
@@ -98,11 +95,9 @@ export const chatService = {
    */
   getUnreadMessages: async (senderId: number): Promise<ChatMessage[]> => {
     try {
-      console.log('[chatService] getUnreadMessages:', senderId);
       const response = await apiClient.get<ChatMessage[]>(
         `/chat/messages/unread/${senderId}`
       );
-      console.log('[chatService] getUnreadMessages response:', response.data);
       return response.data;
     } catch (error) {
       console.error('[chatService] Error fetching unread messages:', error);

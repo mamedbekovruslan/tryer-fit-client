@@ -6,15 +6,12 @@ import { DateValue } from '@mantine/dates';
 import { IoIosArrowBack } from 'react-icons/io';
 import ClientRegistrationForm from '@/features/auth/register/client/ui/ClientRegistrationForm'; // Путь к существующему компоненту
 import TrainerRegistrationForm from '@/features/auth/register/trainer/ui/TrainerRegistrationForm'; // Путь к существующему компоненту
-import { useRegisterFormState, RegisterFormValues, RegisterFormHandlers } from '@/features/auth/register/common/hooks/useRegisterFormState';
+import { useRegisterFormState } from '@/features/auth/register/common/hooks/useRegisterFormState';
 import { useRegisterFormSubmit } from '@/features/auth/register/common/hooks/useRegisterFormSubmit';
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
 }
-
-// Тип для объединения значений и обработчиков
-type CommonFields = RegisterFormValues & RegisterFormHandlers;
 
 // Тип для адаптированных полей, совместимых с компонентами (number | '')
 interface AdaptedCommonFields {
@@ -96,7 +93,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const { handleSubmit: handleFormSubmit, loading, error } = useRegisterFormSubmit();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    await handleFormSubmit(e, formState, userType, onSwitchToLogin);
+    await handleFormSubmit(e, formState, userType);
   };
 
   // Адаптер для конвертации типов между хуком (string | number) и компонентами (number | '')
@@ -109,8 +106,8 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     password: formState.password,
     confirmPassword: formState.confirmPassword,
     gender: formState.gender,
-    height: typeof formState.height === 'number' ? (formState.height === 0 ? 0 : formState.height) : formState.height === '' ? '' : Number(formState.height),
-    weight: typeof formState.weight === 'number' ? (formState.weight === 0 ? 0 : formState.weight) : formState.weight === '' ? '' : Number(formState.weight),
+    height: formState.height,
+    weight: formState.weight,
     phone: formState.phone,
     birthDate: formState.birthDate,
     education: formState.education,
@@ -118,11 +115,11 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     degree: formState.degree,
     specialization: formState.specialization,
     certificateNumber: formState.certificateNumber,
-    waistCircumference: typeof formState.waistCircumference === 'number' ? (formState.waistCircumference === 0 ? 0 : formState.waistCircumference) : formState.waistCircumference === '' ? '' : Number(formState.waistCircumference),
-    chestCircumference: typeof formState.chestCircumference === 'number' ? (formState.chestCircumference === 0 ? 0 : formState.chestCircumference) : formState.chestCircumference === '' ? '' : Number(formState.chestCircumference),
-    hipCircumference: typeof formState.hipCircumference === 'number' ? (formState.hipCircumference === 0 ? 0 : formState.hipCircumference) : formState.hipCircumference === '' ? '' : Number(formState.hipCircumference),
-    armCircumference: typeof formState.armCircumference === 'number' ? (formState.armCircumference === 0 ? 0 : formState.armCircumference) : formState.armCircumference === '' ? '' : Number(formState.armCircumference),
-    legCircumference: typeof formState.legCircumference === 'number' ? (formState.legCircumference === 0 ? 0 : formState.legCircumference) : formState.legCircumference === '' ? '' : Number(formState.legCircumference),
+    waistCircumference: formState.waistCircumference,
+    chestCircumference: formState.chestCircumference,
+    hipCircumference: formState.hipCircumference,
+    armCircumference: formState.armCircumference,
+    legCircumference: formState.legCircumference,
     fitnessGoal: formState.fitnessGoal,
     expectedResult: formState.expectedResult,
     contraindications: formState.contraindications,
@@ -140,8 +137,8 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     setPassword: formState.setPassword,
     setConfirmPassword: formState.setConfirmPassword,
     setGender: formState.setGender,
-    setHeight: (value: number | '') => formState.setHeight(value === '' ? '' : value),
-    setWeight: (value: number | '') => formState.setWeight(value === '' ? '' : value),
+    setHeight: formState.setHeight,
+    setWeight: formState.setWeight,
     setPhone: formState.setPhone,
     setBirthDate: formState.setBirthDate,
     setEducation: formState.setEducation,
@@ -149,11 +146,11 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     setDegree: formState.setDegree,
     setSpecialization: formState.setSpecialization,
     setCertificateNumber: formState.setCertificateNumber,
-    setWaistCircumference: (value: number | '') => formState.setWaistCircumference(value === '' ? '' : value),
-    setChestCircumference: (value: number | '') => formState.setChestCircumference(value === '' ? '' : value),
-    setHipCircumference: (value: number | '') => formState.setHipCircumference(value === '' ? '' : value),
-    setArmCircumference: (value: number | '') => formState.setArmCircumference(value === '' ? '' : value),
-    setLegCircumference: (value: number | '') => formState.setLegCircumference(value === '' ? '' : value),
+    setWaistCircumference: formState.setWaistCircumference,
+    setChestCircumference: formState.setChestCircumference,
+    setHipCircumference: formState.setHipCircumference,
+    setArmCircumference: formState.setArmCircumference,
+    setLegCircumference: formState.setLegCircumference,
     setFitnessGoal: formState.setFitnessGoal,
     setExpectedResult: formState.setExpectedResult,
     setContraindications: formState.setContraindications,

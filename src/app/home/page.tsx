@@ -9,18 +9,14 @@ import { trainerService, Trainer } from '@/services/trainerService';
 import { clientService } from '@/services/clientService';
 
 export default function HomePage() {
-  const { user, refreshUserProfile } = useAuth();
+  const { user, refreshUserProfile, isAuthenticated } = useAuth();
   const [trainerProfile, setTrainerProfile] = useState<Trainer | null>(null);
 
   useEffect(() => {
-    // Обновляем профиль пользователя при загрузке страницы, если у нас нет информации о пользователе
-    if (!user && typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      if (token) {
-        refreshUserProfile();
-      }
+    if (!user && isAuthenticated) {
+      void refreshUserProfile();
     }
-  }, [user, refreshUserProfile]);
+  }, [user, refreshUserProfile, isAuthenticated]);
 
   useEffect(() => {
     const loadTrainerProfile = async () => {

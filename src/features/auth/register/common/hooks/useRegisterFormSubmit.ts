@@ -3,9 +3,10 @@ import { clientService } from '@/services/clientService';
 import { trainerService } from '@/services/trainerService';
 import { authService } from '@/services/authService';
 import { RegisterFormValues } from './useRegisterFormState';
+import { useAuth } from '@/providers/AuthProvider';
 
 export interface RegisterFormSubmitHandler {
-  handleSubmit: (e: React.FormEvent, values: RegisterFormValues, userType: 'client' | 'trainer', onSwitchToLogin: () => void) => Promise<void>;
+  handleSubmit: (e: React.FormEvent, values: RegisterFormValues, userType: 'client' | 'trainer') => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -13,8 +14,9 @@ export interface RegisterFormSubmitHandler {
 export const useRegisterFormSubmit = (): RegisterFormSubmitHandler => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { login, refreshUserProfile } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent, values: RegisterFormValues, userType: 'client' | 'trainer', onSwitchToLogin: () => void) => {
+  const handleSubmit = async (e: React.FormEvent, values: RegisterFormValues, userType: 'client' | 'trainer') => {
     e.preventDefault();
 
     const {
@@ -119,9 +121,8 @@ export const useRegisterFormSubmit = (): RegisterFormSubmitHandler => {
       // После успешной регистрации, сразу выполняем вход
       const loginResponse = await authService.login({ email, password });
 
-      // Сохраняем токен и данные пользователя
-      localStorage.setItem('token', loginResponse.access_token);
-      localStorage.setItem('user', JSON.stringify(loginResponse.user));
+      login(loginResponse.access_token, loginResponse.user);
+      await refreshUserProfile();
 
       // Перенаправляем в зависимости от типа пользователя
       if (loginResponse.user.user_type === 'trainer') {

@@ -121,7 +121,7 @@ export default function NutritionPlanManager() {
     setFormData({
       name: plan.name,
       description: plan.description || '',
-      nutritionCategoryId: plan.nutritionCategoryId
+      nutritionCategoryId: plan.nutritionCategoryId ?? 1
     });
     setOpened(true);
   };

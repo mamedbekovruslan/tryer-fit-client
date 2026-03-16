@@ -13,8 +13,6 @@ export function ClientList({ clients, selectedClientId }: ClientListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  console.log('[ClientList] Render with clients:', clients, 'selectedClientId:', selectedClientId);
-
   const handleSelectClient = (clientId: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('clientId', clientId.toString());
@@ -42,9 +40,6 @@ export function ClientList({ clients, selectedClientId }: ClientListProps) {
               cursor: 'pointer',
               backgroundColor: selectedClientId === client.userId ? 'var(--mantine-color-blue-light)' : 'transparent',
               transition: 'background-color 0.2s',
-            }}
-            _hover={{
-              backgroundColor: 'var(--mantine-color-gray-light)',
             }}
           >
             <Group justify="space-between" wrap="nowrap">

@@ -1,13 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
 import { Loader, Center, Container } from '@mantine/core';
+import {
+  canUserAccessPath,
+  getAllowedUserTypesForPath,
+  getDefaultAuthorizedRedirect,
+  type UserType,
+} from '@/lib/routeAccess';
 
 interface UserTypeProtectedRouteProps {
   children: React.ReactNode;
-  allowedUserTypes: ('client' | 'trainer')[];
+  allowedUserTypes?: UserType[];
   fallback?: React.ReactNode; // Компонент, который отображается при отсутствии доступа
 }
 
@@ -16,25 +22,28 @@ export default function UserTypeProtectedRoute({
   allowedUserTypes,
   fallback
 }: UserTypeProtectedRouteProps) {
-  const { user, isAuthenticated, checkAuthStatus } = useAuth();
+  const { user, isAuthenticated, isInitializing } = useAuth();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const allowedTypes = getAllowedUserTypesForPath(pathname) ?? allowedUserTypes ?? null;
 
   useEffect(() => {
-    // Проверяем статус аутентификации при монтировании компонента
-    if (!checkAuthStatus()) {
-      // Если пользователь не аутентифицирован, перенаправляем на страницу входа
-      router.push('/auth');
-    } else if (user && !allowedUserTypes.includes(user.user_type)) {
-      // Если пользователь аутентифицирован, но не имеет разрешенного типа, перенаправляем на домашнюю страницу
-      router.push('/home');
-    } else {
-      setLoading(false);
+    if (isInitializing) {
+      return;
     }
-  }, [checkAuthStatus, router, user, allowedUserTypes]);
 
-  // Если идет проверка аутентификации, можно показать лоадер
-  if (loading) {
+    if (!isAuthenticated) {
+      router.push('/auth');
+    } else if (
+      user &&
+      allowedTypes &&
+      !canUserAccessPath(pathname, user.user_type)
+    ) {
+      router.push(getDefaultAuthorizedRedirect(user.user_type));
+    }
+  }, [isAuthenticated, router, user, allowedTypes, isInitializing, pathname]);
+
+  if (isInitializing) {
     return (
       <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <Center>
@@ -44,16 +53,17 @@ export default function UserTypeProtectedRoute({
     );
   }
 
-  // Если пользователь аутентифицирован и имеет разрешенный тип, отображаем защищенные дети
-  if (isAuthenticated && user && allowedUserTypes.includes(user.user_type)) {
+  if (
+    isAuthenticated &&
+    user &&
+    (!allowedTypes || allowedTypes.includes(user.user_type))
+  ) {
     return <>{children}</>;
   }
 
-  // Если указан fallback и пользователь не имеет доступа, отображаем его
   if (fallback) {
     return <>{fallback}</>;
   }
 
-  // По умолчанию возвращаем null, если пользователь не имеет доступа и нет fallback
   return null;
 }

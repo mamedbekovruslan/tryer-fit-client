@@ -14,9 +14,13 @@ import {
   Title,
 } from '@mantine/core';
 import { useParams, useRouter } from 'next/navigation';
-import { progressReportService, ProgressReport } from '@/services/progressReportService';
+import {
+  progressReportService,
+  type ProgressReport,
+  type ProgressReportComment,
+} from '@/services/progressReportService';
 
-function formatTrainerName(report: ProgressReport['comments'][number]['trainer']) {
+function formatTrainerName(report: ProgressReportComment['trainer']) {
   return `${report.first_name || ''} ${report.last_name || ''}`.trim() || report.username;
 }
 

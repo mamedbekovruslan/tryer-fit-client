@@ -261,7 +261,7 @@ export default function TrainerWorkoutPage() {
   const openEditProgram = (program: WorkoutProgram) => {
     setEditingProgram(program);
     setProgramForm({ name: program.name, description: program.description || '' });
-    setSelectedCategoryForProgram(program.workoutCategoryId);
+    setSelectedCategoryForProgram(program.workoutCategoryId ?? null);
     setProgramModalOpen(true);
   };
 

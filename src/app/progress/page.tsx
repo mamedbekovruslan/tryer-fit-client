@@ -1,33 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Box, Card, Button, Group, Select, Checkbox, Pagination, LoadingOverlay } from '@mantine/core';
-import { DatePicker } from '@mantine/dates';
+import { Container, Title, Text, Paper, Card, Button, Group, Select, Checkbox, LoadingOverlay } from '@mantine/core';
+import { DatePickerInput, type DatesRangeValue } from '@mantine/dates';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useAuth } from '@/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { progressReportService, ProgressReport } from '@/services/progressReportService';
-
-// Типы данных
-interface ProgressDataPoint {
-  date: string;
-  weight: number;
-  bodyFat: number;
-  muscleMass: number;
-  measurements: {
-    chest: number;
-    waist: number;
-    hips: number;
-    arms: number;
-    thighs: number;
-  };
-}
-
-interface Comment {
-  id: number;
-  date: string;
-  text: string;
-}
 
 const chartLabelMap: Record<string, string> = {
   weight: 'Вес',
@@ -50,24 +28,21 @@ function formatTooltipDate(value: string) {
   });
 }
 
-function formatTooltipValue(value: number, name: string) {
-  const label = chartLabelMap[name] || name;
-  return [`${value}`, label];
+function formatTooltipValue(value: number | undefined, name: string | undefined) {
+  const label = name ? chartLabelMap[name] || name : '';
+  return `${value ?? 0} ${label}`;
 }
 
 export default function ProgressPage() {
-  const { user } = useAuth();
   const router = useRouter();
   const [timeRange, setTimeRange] = useState<'month' | 'year' | 'custom'>('month');
-  const [customDateRange, setCustomDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [customDateRange, setCustomDateRange] = useState<DatesRangeValue>([null, null]);
   const [displayOptions, setDisplayOptions] = useState({
     weight: true,
     bodyFat: true,
     muscleMass: true,
     measurements: false,
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [commentsPerPage] = useState(10);
   const [progressData, setProgressData] = useState<ProgressReport[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -139,7 +114,7 @@ export default function ProgressPage() {
   return (
     <Container size="lg" py="xl">
       <Paper shadow="md" p="xl" radius="md">
-        <LoadingOverlay visible={loading} overlayBlur={2} />
+        <LoadingOverlay visible={loading} overlayProps={{ blur: 2 }} />
         <Title order={2} mb="lg">Прогресс</Title>
 
         <Group mb="lg" grow>
@@ -156,7 +131,7 @@ export default function ProgressPage() {
           />
 
           {timeRange === 'custom' && (
-            <DatePicker
+            <DatePickerInput
               type="range"
               label="Указать период"
               placeholder="Выберите даты"

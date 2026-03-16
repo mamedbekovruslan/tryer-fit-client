@@ -1,3 +1,4 @@
+import { memo, type ComponentProps } from 'react';
 import {
   TextInput,
   PasswordInput,
@@ -69,6 +70,106 @@ interface ClientRegistrationFormProps {
   };
 }
 
+function numberOrEmpty(value: string | number): number | '' {
+  return typeof value === 'number' ? value : '';
+}
+
+const MemoTextInput = memo(function MemoTextInput({
+  value,
+  setValue,
+  ...props
+}: Omit<ComponentProps<typeof TextInput>, 'value' | 'onChange'> & {
+  value: string;
+  setValue: (value: string) => void;
+}) {
+  return (
+    <TextInput
+      {...props}
+      value={value}
+      onChange={(e) => setValue(e.currentTarget.value)}
+    />
+  );
+});
+
+const MemoPasswordInput = memo(function MemoPasswordInput({
+  value,
+  setValue,
+  ...props
+}: Omit<ComponentProps<typeof PasswordInput>, 'value' | 'onChange'> & {
+  value: string;
+  setValue: (value: string) => void;
+}) {
+  return (
+    <PasswordInput
+      {...props}
+      value={value}
+      onChange={(e) => setValue(e.currentTarget.value)}
+    />
+  );
+});
+
+const MemoTextarea = memo(function MemoTextarea({
+  value,
+  setValue,
+  ...props
+}: Omit<ComponentProps<typeof Textarea>, 'value' | 'onChange'> & {
+  value: string;
+  setValue: (value: string) => void;
+}) {
+  return (
+    <Textarea
+      {...props}
+      value={value}
+      onChange={(e) => setValue(e.currentTarget.value)}
+    />
+  );
+});
+
+const MemoNumberInput = memo(function MemoNumberInput({
+  value,
+  setValue,
+  ...props
+}: Omit<ComponentProps<typeof NumberInput>, 'value' | 'onChange'> & {
+  value: number | '';
+  setValue: (value: number | '') => void;
+}) {
+  return (
+    <NumberInput
+      {...props}
+      value={value}
+      onChange={(nextValue) => setValue(numberOrEmpty(nextValue))}
+    />
+  );
+});
+
+const MemoSelect = memo(function MemoSelect({
+  value,
+  setValue,
+  ...props
+}: Omit<ComponentProps<typeof Select>, 'value' | 'onChange'> & {
+  value: string;
+  setValue: (value: string) => void;
+}) {
+  return (
+    <Select
+      {...props}
+      value={value}
+      onChange={(nextValue) => nextValue && setValue(nextValue)}
+    />
+  );
+});
+
+const MemoDateInput = memo(function MemoDateInput({
+  value,
+  setValue,
+  ...props
+}: Omit<ComponentProps<typeof DateInput>, 'value' | 'onChange'> & {
+  value: DateValue | null;
+  setValue: (value: DateValue | null) => void;
+}) {
+  return <DateInput {...props} value={value} onChange={setValue} />;
+});
+
 export default function ClientRegistrationForm({ commonFields }: ClientRegistrationFormProps) {
   const handlePhotoUpload = async (files: File[]) => {
     const file = files[0];
@@ -86,103 +187,103 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
 
   return (
     <>
-      <TextInput
+      <MemoTextInput
         label="Фамилия"
         placeholder="Иванов"
         value={commonFields.lastName}
-        onChange={(e) => commonFields.setLastName(e.currentTarget.value)}
+        setValue={commonFields.setLastName}
         required
         mt="md"
       />
-      <TextInput
+      <MemoTextInput
         label="Имя"
         placeholder="Иван"
         value={commonFields.firstName}
-        onChange={(e) => commonFields.setFirstName(e.currentTarget.value)}
+        setValue={commonFields.setFirstName}
         required
         mt="md"
       />
-      <TextInput
+      <MemoTextInput
         label="Отчество"
         placeholder="Иванович"
         value={commonFields.middleName}
-        onChange={(e) => commonFields.setMiddleName(e.currentTarget.value)}
+        setValue={commonFields.setMiddleName}
         mt="md"
       />
 
-      <TextInput
+      <MemoTextInput
         label="Электронная почта"
         placeholder="your@email.com"
         value={commonFields.email}
-        onChange={(e) => commonFields.setEmail(e.currentTarget.value)}
+        setValue={commonFields.setEmail}
         required
         mt="md"
       />
 
-      <PasswordInput
+      <MemoPasswordInput
         label="Пароль"
         placeholder="Введите пароль"
         value={commonFields.password}
-        onChange={(e) => commonFields.setPassword(e.currentTarget.value)}
+        setValue={commonFields.setPassword}
         required
         mt="md"
       />
 
-      <PasswordInput
+      <MemoPasswordInput
         label="Подтверждение пароля"
         placeholder="Повторите пароль"
         value={commonFields.confirmPassword}
-        onChange={(e) => commonFields.setConfirmPassword(e.currentTarget.value)}
+        setValue={commonFields.setConfirmPassword}
         required
         mt="md"
       />
 
-      <Select
+      <MemoSelect
         label="Пол"
         placeholder="Выберите пол"
         data={['Мужской', 'Женский']}
         value={commonFields.gender}
-        onChange={(value) => value && commonFields.setGender(value)}
+        setValue={commonFields.setGender}
         required
         mt="md"
       />
 
-      <NumberInput
+      <MemoNumberInput
         label="Рост (см)"
         placeholder="175"
         value={commonFields.height}
-        onChange={commonFields.setHeight}
+        setValue={commonFields.setHeight}
         min={50}
         max={300}
         mt="md"
       />
 
-      <NumberInput
+      <MemoNumberInput
         label="Вес (кг)"
         placeholder="70"
         value={commonFields.weight}
-        onChange={commonFields.setWeight}
+        setValue={commonFields.setWeight}
         min={1}
         max={500}
         mt="md"
       />
 
-      <TextInput
+      <MemoTextInput
         label="Номер телефона"
         placeholder="+7 (XXX) XXX-XXXX"
         value={commonFields.phone}
-        onChange={(e) => commonFields.setPhone(e.currentTarget.value)}
+        setValue={commonFields.setPhone}
         required
         mt="md"
       />
 
       <Divider my="sm" />
 
-      <DateInput
+      <MemoDateInput
         label="Дата рождения"
         placeholder="Выберите дату"
         value={commonFields.birthDate}
-        onChange={commonFields.setBirthDate}
+        setValue={commonFields.setBirthDate}
         mt="md"
       />
 
@@ -190,55 +291,55 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
       <Title order={4} mt="md">Дополнительная информация</Title>
 
       {/* Обхваты */}
-      <NumberInput
+      <MemoNumberInput
         label="Обхват талии (см)"
         placeholder="Введите значение"
         value={commonFields.waistCircumference}
-        onChange={commonFields.setWaistCircumference}
+        setValue={commonFields.setWaistCircumference}
         min={0}
         max={300}
         step={0.1}
         mt="md"
       />
 
-      <NumberInput
+      <MemoNumberInput
         label="Обхват груди (см)"
         placeholder="Введите значение"
         value={commonFields.chestCircumference}
-        onChange={commonFields.setChestCircumference}
+        setValue={commonFields.setChestCircumference}
         min={0}
         max={300}
         step={0.1}
         mt="md"
       />
 
-      <NumberInput
+      <MemoNumberInput
         label="Обхват бедер (см)"
         placeholder="Введите значение"
         value={commonFields.hipCircumference}
-        onChange={commonFields.setHipCircumference}
+        setValue={commonFields.setHipCircumference}
         min={0}
         max={300}
         step={0.1}
         mt="md"
       />
 
-      <NumberInput
+      <MemoNumberInput
         label="Обхват руки (см)"
         placeholder="Введите значение"
         value={commonFields.armCircumference}
-        onChange={commonFields.setArmCircumference}
+        setValue={commonFields.setArmCircumference}
         min={0}
         max={300}
         step={0.1}
         mt="md"
       />
 
-      <NumberInput
+      <MemoNumberInput
         label="Обхват ноги (см)"
         placeholder="Введите значение"
         value={commonFields.legCircumference}
-        onChange={commonFields.setLegCircumference}
+        setValue={commonFields.setLegCircumference}
         min={0}
         max={300}
         step={0.1}
@@ -246,7 +347,7 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
       />
 
       {/* Цель и ожидаемый результат */}
-      <Select
+      <MemoSelect
         label="Цель тренировок"
         placeholder="Выберите цель"
         data={[
@@ -257,62 +358,62 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
           { value: 'general_fitness', label: 'Общая физическая подготовка' },
         ]}
         value={commonFields.fitnessGoal}
-        onChange={(value) => value && commonFields.setFitnessGoal(value)}
+        setValue={commonFields.setFitnessGoal}
         mt="md"
       />
 
-      <Textarea
+      <MemoTextarea
         label="Какой результат вы ожидаете увидеть?"
         placeholder="Опишите свои цели и ожидания..."
         value={commonFields.expectedResult}
-        onChange={(e) => commonFields.setExpectedResult(e.currentTarget.value)}
+        setValue={commonFields.setExpectedResult}
         minRows={3}
         mt="md"
       />
 
       {/* Противопоказания и заболевания */}
-      <Textarea
+      <MemoTextarea
         label="Противопоказания"
         placeholder="Укажите возможные противопоказания..."
         value={commonFields.contraindications}
-        onChange={(e) => commonFields.setContraindications(e.currentTarget.value)}
+        setValue={commonFields.setContraindications}
         minRows={2}
         mt="md"
       />
 
-      <Textarea
+      <MemoTextarea
         label="Заболевания"
         placeholder="Укажите имеющиеся заболевания..."
         value={commonFields.diseases}
-        onChange={(e) => commonFields.setDiseases(e.currentTarget.value)}
+        setValue={commonFields.setDiseases}
         minRows={2}
         mt="md"
       />
 
-      <Textarea
+      <MemoTextarea
         label="Ограничения"
         placeholder="Укажите физические ограничения..."
         value={commonFields.limitations}
-        onChange={(e) => commonFields.setLimitations(e.currentTarget.value)}
+        setValue={commonFields.setLimitations}
         minRows={2}
         mt="md"
       />
 
       {/* Опыт и рацион */}
-      <Textarea
+      <MemoTextarea
         label="Опыт тренировок"
         placeholder="Расскажите о вашем опыте тренировок..."
         value={commonFields.trainingExperience}
-        onChange={(e) => commonFields.setTrainingExperience(e.currentTarget.value)}
+        setValue={commonFields.setTrainingExperience}
         minRows={3}
         mt="md"
       />
 
-      <Textarea
+      <MemoTextarea
         label="Текущий рацион питания"
         placeholder="Опишите ваш текущий рацион..."
         value={commonFields.currentDiet}
-        onChange={(e) => commonFields.setCurrentDiet(e.currentTarget.value)}
+        setValue={commonFields.setCurrentDiet}
         minRows={3}
         mt="md"
       />

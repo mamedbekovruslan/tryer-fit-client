@@ -1,11 +1,13 @@
 import apiClient from '@/lib/api';
 import { Client } from './clientService';
+import { normalizeAuthUser, normalizeClient } from './modelAdapters';
 
 export interface UserProfile {
   id: number;
   email: string;
   username: string;
   user_type: 'client' | 'trainer';
+  userType?: 'client' | 'trainer';
   trainer?: any;
 }
 
@@ -17,7 +19,7 @@ export const profileService = {
   getMyProfile: async (): Promise<UserProfile> => {
     try {
       const response = await apiClient.get('/auth/profile');
-      return response.data;
+      return normalizeAuthUser(response.data) as UserProfile;
     } catch (error) {
       console.error('Get profile error:', error);
       throw error;
@@ -27,7 +29,7 @@ export const profileService = {
   getClientWithTrainer: async (clientId: number): Promise<ClientWithTrainer> => {
     try {
       const response = await apiClient.get(`/clients/${clientId}`);
-      return response.data;
+      return normalizeClient(response.data) as ClientWithTrainer;
     } catch (error) {
       console.error('Get client with trainer error:', error);
       throw error;

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ChatMessage } from '@/services/chatService';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface UseChatSocketOptions {
   onMessage?: (message: ChatMessage) => void;
@@ -16,60 +17,53 @@ interface UseChatSocketOptions {
 export function useChatSocket(options: UseChatSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
   const optionsRef = useRef(options);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-
-  // Обновляем ref с опциями при каждом изменении
-  optionsRef.current = options;
+  const { isAuthenticated, isInitializing } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    optionsRef.current = options;
+  }, [options]);
 
-    if (!token) {
-      console.warn('[useChatSocket] No token found, skipping WebSocket connection');
+  useEffect(() => {
+    if (isInitializing || !isAuthenticated) {
       return;
     }
 
     // Если подключение уже есть, не создаём новое
     if (socketRef.current) {
-      console.log('[useChatSocket] Socket already exists, skipping connection');
       return;
     }
 
     const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
-    console.log('[useChatSocket] Connecting to WebSocket:', `${baseURL}/chat`);
-
     // Создаем WebSocket подключение
     socketRef.current = io(`${baseURL}/chat`, {
-      auth: { token },
+      withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
+    setSocket(socketRef.current);
 
     socketRef.current.on('connect', () => {
-      console.log('[useChatSocket] WebSocket connected:', socketRef.current?.id);
       setIsConnected(true);
     });
 
     socketRef.current.on('connected', (data) => {
-      console.log('[useChatSocket] Authenticated as:', data);
       optionsRef.current.onConnected?.(data);
     });
 
     socketRef.current.on('receiveMessage', (message: ChatMessage) => {
-      console.log('[useChatSocket] New message received:', message);
       optionsRef.current.onMessage?.(message);
     });
 
     socketRef.current.on('messageSent', (message: ChatMessage) => {
-      console.log('[useChatSocket] Message sent:', message);
       optionsRef.current.onMessageSent?.(message);
     });
 
     socketRef.current.on('messagesRead', (data) => {
-      console.log('[useChatSocket] Messages marked as read:', data);
       optionsRef.current.onMessagesRead?.(data);
     });
 
@@ -81,13 +75,11 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
       console.error('[useChatSocket] WebSocket error:', error);
     });
 
-    socketRef.current.on('disconnect', (reason) => {
-      console.log('[useChatSocket] WebSocket disconnected:', reason);
+    socketRef.current.on('disconnect', () => {
       setIsConnected(false);
     });
 
-    socketRef.current.on('reconnect', (attemptNumber) => {
-      console.log('[useChatSocket] WebSocket reconnected after', attemptNumber, 'attempts');
+    socketRef.current.on('reconnect', () => {
       setIsConnected(true);
     });
 
@@ -96,43 +88,32 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
     });
 
     return () => {
-      // Не отключаем сокет при размонтировании, чтобы сохранить подключение
-      // при навигации между компонентами
-      console.log('[useChatSocket] Component unmounted, keeping socket alive');
+      // Не отключаем сокет при размонтировании, чтобы сохранить подключение при навигации.
     };
-  }, []); // Пустой массив зависимостей - создаём подключение только один раз
+  }, [isAuthenticated, isInitializing]);
 
   // Отдельный эффект для очистки подключения при размонтировании всего приложения
   useEffect(() => {
-    return () => {
-      // Проверяем, есть ли другие активные компоненты с этим хуком
-      // Если нет - отключаем сокет
-      const token = localStorage.getItem('token');
-      if (!token && socketRef.current) {
-        console.log('[useChatSocket] No token, disconnecting socket');
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        setIsConnected(false);
-      }
-    };
-  }, []);
+    if (!isInitializing && !isAuthenticated && socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+      setSocket(null);
+      setIsConnected(false);
+    }
+  }, [isAuthenticated, isInitializing]);
 
   const sendMessage = useCallback((receiverId: number, senderType: 'client' | 'trainer', message: string) => {
     if (socketRef.current?.connected) {
-      console.log('[useChatSocket] Sending message:', { receiverId, senderType, message });
       socketRef.current.emit('sendMessage', {
         receiverId,
         senderType,
         message,
       });
-    } else {
-      console.warn('[useChatSocket] Socket not connected, message not sent');
     }
   }, []);
 
   const markAsRead = useCallback((senderId: number) => {
     if (socketRef.current?.connected) {
-      console.log('[useChatSocket] Marking messages as read:', senderId);
       socketRef.current.emit('markAsRead', { senderId });
     }
   }, []);
@@ -144,7 +125,7 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
   }, []);
 
   return {
-    socket: socketRef.current,
+    socket,
     sendMessage,
     markAsRead,
     sendTypingStatus,

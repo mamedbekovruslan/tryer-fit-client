@@ -16,8 +16,8 @@ export const UserProfileDropdown = () => {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push('/auth');
   };
 

@@ -10,6 +10,10 @@ import { chatService, ChatUser } from '@/services/chatService';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+function normalizeOptionalNumber(value: string | number): number | undefined {
+  return typeof value === 'number' ? value : undefined;
+}
+
 // Типы данных
 interface ExtendedClient {
   id: number;
@@ -363,8 +367,7 @@ export default function AdminPage() {
                         <Text size="sm" c="dimmed">Рост (см)</Text>
                         <NumberInput
                           value={formData.height}
-                          onChange={(value) => setFormData({...formData, height: value || undefined})}
-                          precision={2}
+                          onChange={(value) => setFormData({...formData, height: normalizeOptionalNumber(value)})}
                           min={0}
                         />
                       </div>
@@ -373,8 +376,7 @@ export default function AdminPage() {
                         <Text size="sm" c="dimmed">Вес (кг)</Text>
                         <NumberInput
                           value={formData.weight}
-                          onChange={(value) => setFormData({...formData, weight: value || undefined})}
-                          precision={2}
+                          onChange={(value) => setFormData({...formData, weight: normalizeOptionalNumber(value)})}
                           min={0}
                         />
                       </div>

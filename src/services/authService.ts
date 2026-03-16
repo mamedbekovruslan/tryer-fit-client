@@ -1,4 +1,5 @@
 import apiClient from '@/lib/api';
+import { normalizeAuthUser } from './modelAdapters';
 
 export interface LoginCredentials {
   email: string;
@@ -38,9 +39,21 @@ export const authService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
       const response = await apiClient.post('/auth/login', credentials);
-      return response.data;
+      return {
+        ...response.data,
+        user: normalizeAuthUser(response.data.user) as AuthUser,
+      };
     } catch (error) {
       console.error('Login error:', error);
+      throw error;
+    }
+  },
+
+  logout: async (): Promise<void> => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
       throw error;
     }
   },

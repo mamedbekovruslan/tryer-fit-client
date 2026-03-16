@@ -43,7 +43,12 @@ export default function CreateNutritionDayPlanPage() {
   const { user } = useAuth();
   const router = useRouter();
   
-  const [planData, setPlanData] = useState({
+  const [planData, setPlanData] = useState<{
+    day_name: string;
+    title: string;
+    description: string;
+    meals: Meal[];
+  }>({
     day_name: '',
     title: '',
     description: '',

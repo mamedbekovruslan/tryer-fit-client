@@ -1,126 +1,67 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { clientService, ClientResponse } from '@/services/clientService';
+import { clientService } from '@/services/clientService';
 import { trainerService } from '@/services/trainerService';
 import { AuthUser } from '@/services/authService';
-import { profileService, UserProfile } from '@/services/profileService';
+import { authService } from '@/services/authService';
+import { profileService } from '@/services/profileService';
 
 interface AuthContextType {
-  token: string | null;
   user: AuthUser | null;
   login: (token: string, user: AuthUser) => void;
   logout: () => void;
+  isInitializing: boolean;
   isAuthenticated: boolean;
   checkAuthStatus: () => boolean;
   refreshUserProfile: () => Promise<void>;
 }
 
-// Функция для проверки валидности JWT токена
-function isTokenValid(token: string | null): boolean {
-  if (!token) return false;
-
-  try {
-    // Разбиваем токен на части (header.payload.signature)
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return false; // Некорректный формат токена
-    }
-
-    // Декодируем payload (вторая часть)
-    const payload = JSON.parse(atob(parts[1]));
-
-    // Проверяем, не истек ли токен (exp - время истечения в секундах)
-    const currentTime = Math.floor(Date.now() / 1000);
-    return payload.exp > currentTime;
-  } catch (error) {
-    console.error('Ошибка при проверке токена:', error);
-    return false;
-  }
-}
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    // Check for existing token in localStorage on initial load
-    const storedToken = localStorage.getItem('token');
-
-    // Проверяем, не истек ли токен
-    if (storedToken && isTokenValid(storedToken)) {
-      setToken(storedToken);
-      // Automatically fetch user profile if token exists
-      refreshUserProfile();
-    } else if (storedToken) {
-      // Если токен существует, но истек, удаляем его
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
-    }
-
-    // Listen for storage changes (e.g. logout from another tab)
-    const handleStorageChange = () => {
-      const currentToken = localStorage.getItem('token');
-
-      if (currentToken && isTokenValid(currentToken)) {
-        setToken(currentToken);
-        // Refresh user profile if token exists
-        refreshUserProfile();
-      } else if (currentToken) {
-        // Если токен существует, но истек, удаляем его
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setToken(null);
+    const initializeAuth = async () => {
+      try {
+        await refreshUserProfile();
+      } catch {
         setUser(null);
-      } else {
-        setToken(null);
-        setUser(null);
+      } finally {
+        setIsInitializing(false);
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
+    void initializeAuth();
+  }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
     };
-  }, []); // Убрали user из зависимостей, чтобы useEffect не запускался при каждом изменении пользователя
+  }, []);
 
-  const login = (token: string, user: AuthUser) => {
-    // Проверяем, не истек ли токен перед входом
-    if (!isTokenValid(token)) {
-      console.error('Попытка входа с истекшим токеном');
-      return;
-    }
-
-    console.log('Logging in user in provider:', user); // Логируем информацию о пользователе
-    setToken(token);
+  const login = (_token: string, user: AuthUser) => {
     setUser(user);
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
   };
 
   const logout = () => {
-    setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    void authService.logout().catch((error) => {
+      console.error('Failed to clear auth cookie:', error);
+    });
   };
 
   const refreshUserProfile = async () => {
-    const currentToken = localStorage.getItem('token');
-
-    // Проверяем, не истек ли токен перед обновлением профиля
-    if (!isTokenValid(currentToken)) {
-      logout();
-      return;
-    }
-
     try {
-      // Получаем информацию о пользователе из токена
       const userProfile = await profileService.getMyProfile();
 
       // Если пользователь - клиент, получаем дополнительную информацию с тренером
@@ -151,7 +92,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             trainer: clientWithTrainer.trainer,
           };
           setUser(authUser);
-          localStorage.setItem('user', JSON.stringify(authUser));
         } catch (clientError) {
           // Если не удалось получить информацию о клиенте, используем базовую информацию
           console.error('Could not fetch client profile with trainer:', clientError);
@@ -162,7 +102,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             user_type: userProfile.user_type,
           };
           setUser(authUser);
-          localStorage.setItem('user', JSON.stringify(authUser));
         }
       } else {
         // Для тренеров получаем полную информацию о тренере
@@ -178,7 +117,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             photo_urls: trainerProfile.photo_urls,
           };
           setUser(authUser);
-          localStorage.setItem('user', JSON.stringify(authUser));
         } catch (trainerError) {
           // Если не удалось получить информацию о тренере, используем базовую информацию
           console.error('Could not fetch trainer profile:', trainerError);
@@ -189,26 +127,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             user_type: userProfile.user_type,
           };
           setUser(authUser);
-          localStorage.setItem('user', JSON.stringify(authUser));
         }
       }
     } catch (error) {
-      console.error('Failed to refresh user profile:', error);
-      // If refresh fails, clear the user data
+      const status = (error as any)?.response?.status;
       setUser(null);
-      localStorage.removeItem('user');
+      if (status && status !== 401) {
+        console.error('Failed to refresh user profile:', error);
+      }
     }
   };
 
-  const checkAuthStatus = () => {
-    const token = localStorage.getItem('token');
-    return isTokenValid(token);
-  };
+  const checkAuthStatus = () => Boolean(user);
 
-  const isAuthenticated = !!token && isTokenValid(token);
+  const isAuthenticated = Boolean(user);
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, isAuthenticated, checkAuthStatus, refreshUserProfile }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, isInitializing, isAuthenticated, checkAuthStatus, refreshUserProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );

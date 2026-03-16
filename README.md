@@ -1,4 +1,16 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Auth flow
+
+Клиентская часть работает с backend auth через cookie-based flow.
+
+Что важно:
+- login идёт на backend `/auth/login`
+- backend выставляет `httpOnly cookie` `token`
+- все HTTP-запросы отправляются с `withCredentials: true`
+- Next middleware проверяет именно cookie, а не `localStorage`
+
+Переходный момент:
+- `localStorage token` пока еще используется в части клиентской логики и websocket-чате
+- для новых auth-изменений считать primary source нужно cookie, а не `localStorage`
 
 ## Getting Started
 

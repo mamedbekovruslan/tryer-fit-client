@@ -1,5 +1,12 @@
 import apiClient from '@/lib/api';
 
+const TRAINER_NUTRITION_BASE = '/trainer/nutrition';
+const NUTRITION_CATEGORIES_BASE = '/nutrition-categories';
+const NUTRITION_DAYS_BASE = '/nutrition-days';
+const NUTRITION_PLANS_BASE = '/nutrition-plans';
+const MEALS_BASE = '/meals';
+const CLIENT_NUTRITION_PLANS_BASE = '/client-nutrition-plans';
+
 export interface NutritionCategory {
   id: number;
   name: string;
@@ -8,30 +15,65 @@ export interface NutritionCategory {
   updatedAt: Date;
 }
 
-export interface NutritionDay {
+type NutritionPlanApiResponse = {
   id: number;
   name: string;
   description?: string;
-  nutritionCategoryId: number;
+  nutritionCategory?: NutritionCategory;
+  trainer?: {
+    id: number;
+    username: string;
+  };
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
 export interface NutritionPlan {
   id: number;
   name: string;
   description?: string;
-  nutritionCategoryId: number;
+  nutritionCategoryId?: number;
+  nutritionCategory?: NutritionCategory;
   createdAt: Date;
   updatedAt: Date;
-  nutritionCategory?: NutritionCategory;
 }
+
+type NutritionDayApiResponse = {
+  id: number;
+  name: string;
+  description?: string;
+  nutritionCategoryId?: number;
+  nutritionPlan?: NutritionPlanApiResponse;
+  meals?: MealApiResponse[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export interface NutritionDay {
+  id: number;
+  name: string;
+  description?: string;
+  nutritionCategoryId?: number;
+  nutritionPlanId?: number;
+  nutritionPlan?: NutritionPlan;
+  meals?: Meal[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+type MealApiResponse = {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export interface Meal {
   id: number;
   name: string;
   description?: string;
-  nutritionDayId: number;
+  nutritionDayId?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +83,20 @@ export interface CreateMealRequest {
   description?: string;
   nutritionDayId: number;
 }
+
+type ClientNutritionPlanApiResponse = {
+  id: number;
+  client: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  nutritionPlan?: NutritionPlanApiResponse;
+  isActive?: boolean;
+  is_active?: boolean;
+  assignedAt: Date;
+  updatedAt: Date;
+};
 
 export interface ClientNutritionPlan {
   id: number;
@@ -55,19 +111,6 @@ export interface ClientNutritionPlan {
   updatedAt: Date;
 }
 
-type ClientNutritionPlanApiResponse = ClientNutritionPlan & {
-  is_active?: boolean;
-};
-
-function normalizeClientNutritionPlan(
-  plan: ClientNutritionPlanApiResponse
-): ClientNutritionPlan {
-  return {
-    ...plan,
-    isActive: plan.isActive ?? plan.is_active ?? false,
-  };
-}
-
 export interface CreateNutritionCategoryRequest {
   name: string;
   description?: string;
@@ -76,7 +119,8 @@ export interface CreateNutritionCategoryRequest {
 export interface CreateNutritionDayRequest {
   name: string;
   description?: string;
-  nutritionCategoryId: number;
+  nutritionCategoryId?: number;
+  nutritionPlanId?: number;
 }
 
 export interface CreateNutritionPlanRequest {
@@ -85,353 +129,253 @@ export interface CreateNutritionPlanRequest {
   nutritionCategoryId: number;
 }
 
+function normalizeNutritionPlan(plan: NutritionPlanApiResponse): NutritionPlan {
+  return {
+    ...plan,
+    nutritionCategoryId: plan.nutritionCategory?.id,
+    nutritionCategory: plan.nutritionCategory,
+  };
+}
+
+function normalizeMeal(meal: MealApiResponse, nutritionDayId?: number): Meal {
+  return {
+    ...meal,
+    nutritionDayId,
+  };
+}
+
+function normalizeNutritionDay(day: NutritionDayApiResponse): NutritionDay {
+  return {
+    ...day,
+    nutritionPlanId: day.nutritionPlan?.id,
+    nutritionPlan: day.nutritionPlan ? normalizeNutritionPlan(day.nutritionPlan) : undefined,
+    meals: day.meals?.map((meal) => normalizeMeal(meal, day.id)),
+  };
+}
+
+function normalizeClientNutritionPlan(plan: ClientNutritionPlanApiResponse): ClientNutritionPlan {
+  return {
+    id: plan.id,
+    client: plan.client,
+    nutritionPlan: plan.nutritionPlan
+      ? normalizeNutritionPlan(plan.nutritionPlan)
+      : {
+          id: 0,
+          name: '',
+          createdAt: plan.assignedAt,
+          updatedAt: plan.updatedAt,
+        },
+    isActive: plan.isActive ?? plan.is_active ?? false,
+    assignedAt: plan.assignedAt,
+    updatedAt: plan.updatedAt,
+  };
+}
+
 export const nutritionService = {
-  // Nutrition Categories
   getNutritionCategories: async (): Promise<NutritionCategory[]> => {
-    try {
-      const response = await apiClient.get<NutritionCategory[]>('/nutrition-categories');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching nutrition categories:', error);
-      throw error;
-    }
+    const response = await apiClient.get<NutritionCategory[]>(NUTRITION_CATEGORIES_BASE);
+    return response.data;
   },
 
   createNutritionCategory: async (
-    categoryData: CreateNutritionCategoryRequest
+    categoryData: CreateNutritionCategoryRequest,
   ): Promise<NutritionCategory> => {
-    try {
-      const response = await apiClient.post<NutritionCategory>(
-        '/nutrition-categories',
-        categoryData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error creating nutrition category:', error);
-      throw error;
-    }
+    const response = await apiClient.post<NutritionCategory>(
+      `${TRAINER_NUTRITION_BASE}/categories`,
+      categoryData,
+    );
+    return response.data;
   },
 
   updateNutritionCategory: async (
     id: number,
-    categoryData: Partial<CreateNutritionCategoryRequest>
+    categoryData: Partial<CreateNutritionCategoryRequest>,
   ): Promise<NutritionCategory> => {
-    try {
-      const response = await apiClient.put<NutritionCategory>(
-        `/nutrition-categories/${id}`,
-        categoryData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating nutrition category:', error);
-      throw error;
-    }
+    const response = await apiClient.put<NutritionCategory>(
+      `${TRAINER_NUTRITION_BASE}/categories/${id}`,
+      categoryData,
+    );
+    return response.data;
   },
 
   deleteNutritionCategory: async (id: number): Promise<void> => {
-    try {
-      await apiClient.delete(`/nutrition-categories/${id}`);
-    } catch (error) {
-      console.error('Error deleting nutrition category:', error);
-      throw error;
-    }
+    await apiClient.delete(`${TRAINER_NUTRITION_BASE}/categories/${id}`);
   },
 
-  // Nutrition Days
   getNutritionDaysByCategory: async (categoryId: number): Promise<NutritionDay[]> => {
-    try {
-      const response = await apiClient.get<NutritionDay[]>(
-        `/nutrition-days/category/${categoryId}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching nutrition days:', error);
-      throw error;
-    }
+    const response = await apiClient.get<NutritionDayApiResponse[]>(
+      `${NUTRITION_DAYS_BASE}/category/${categoryId}`,
+    );
+    return response.data.map(normalizeNutritionDay);
+  },
+
+  getNutritionDaysByPlan: async (planId: number): Promise<NutritionDay[]> => {
+    const response = await apiClient.get<NutritionDayApiResponse[]>(
+      `${NUTRITION_DAYS_BASE}/plan/${planId}`,
+    );
+    return response.data.map(normalizeNutritionDay);
   },
 
   getAllNutritionDays: async (): Promise<NutritionDay[]> => {
-    try {
-      const response = await apiClient.get<NutritionDay[]>('/nutrition-days');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching all nutrition days:', error);
-      throw error;
-    }
+    const response = await apiClient.get<NutritionDayApiResponse[]>(NUTRITION_DAYS_BASE);
+    return response.data.map(normalizeNutritionDay);
   },
 
   createNutritionDay: async (
-    dayData: CreateNutritionDayRequest
+    dayData: CreateNutritionDayRequest,
   ): Promise<NutritionDay> => {
-    try {
-      const response = await apiClient.post<NutritionDay>(
-        '/nutrition-days',
-        dayData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error creating nutrition day:', error);
-      throw error;
-    }
+    const response = await apiClient.post<NutritionDayApiResponse>(
+      `${TRAINER_NUTRITION_BASE}/days`,
+      dayData,
+    );
+    return normalizeNutritionDay(response.data);
   },
 
   getNutritionDayById: async (id: number): Promise<NutritionDay> => {
-    try {
-      const response = await apiClient.get<NutritionDay>(`/nutrition-days/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching nutrition day:', error);
-      throw error;
-    }
+    const response = await apiClient.get<NutritionDayApiResponse>(`${NUTRITION_DAYS_BASE}/${id}`);
+    return normalizeNutritionDay(response.data);
   },
 
   updateNutritionDay: async (
     id: number,
-    dayData: Partial<CreateNutritionDayRequest>
+    dayData: Partial<CreateNutritionDayRequest>,
   ): Promise<NutritionDay> => {
-    try {
-      const response = await apiClient.put<NutritionDay>(
-        `/nutrition-days/${id}`,
-        dayData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating nutrition day:', error);
-      throw error;
-    }
+    const response = await apiClient.put<NutritionDayApiResponse>(
+      `${TRAINER_NUTRITION_BASE}/days/${id}`,
+      dayData,
+    );
+    return normalizeNutritionDay(response.data);
   },
 
   deleteNutritionDay: async (id: number): Promise<void> => {
-    try {
-      await apiClient.delete(`/nutrition-days/${id}`);
-    } catch (error) {
-      console.error('Error deleting nutrition day:', error);
-      throw error;
-    }
+    await apiClient.delete(`${TRAINER_NUTRITION_BASE}/days/${id}`);
   },
 
-  // Nutrition Plans
   getNutritionPlansByCategory: async (categoryId: number): Promise<NutritionPlan[]> => {
-    try {
-      const response = await apiClient.get<NutritionPlan[]>(
-        `/nutrition-plans/category/${categoryId}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching nutrition plans:', error);
-      throw error;
-    }
+    const response = await apiClient.get<NutritionPlanApiResponse[]>(
+      `${NUTRITION_PLANS_BASE}/category/${categoryId}`,
+    );
+    return response.data.map(normalizeNutritionPlan);
   },
 
   getAllNutritionPlans: async (): Promise<NutritionPlan[]> => {
-    try {
-      const response = await apiClient.get<NutritionPlan[]>('/nutrition-plans');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching all nutrition plans:', error);
-      throw error;
-    }
+    const response = await apiClient.get<NutritionPlanApiResponse[]>(NUTRITION_PLANS_BASE);
+    return response.data.map(normalizeNutritionPlan);
   },
 
   createNutritionPlan: async (
-    planData: CreateNutritionPlanRequest
+    planData: CreateNutritionPlanRequest,
   ): Promise<NutritionPlan> => {
-    try {
-      const response = await apiClient.post<NutritionPlan>(
-        '/nutrition-plans',
-        planData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error creating nutrition plan:', error);
-      throw error;
-    }
+    const response = await apiClient.post<NutritionPlanApiResponse>(
+      `${TRAINER_NUTRITION_BASE}/plans`,
+      planData,
+    );
+    return normalizeNutritionPlan(response.data);
   },
 
   getNutritionPlanById: async (id: number): Promise<NutritionPlan> => {
-    try {
-      const response = await apiClient.get<NutritionPlan>(`/nutrition-plans/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching nutrition plan:', error);
-      throw error;
-    }
+    const response = await apiClient.get<NutritionPlanApiResponse>(`${NUTRITION_PLANS_BASE}/${id}`);
+    return normalizeNutritionPlan(response.data);
   },
 
   updateNutritionPlan: async (
     id: number,
-    planData: Partial<CreateNutritionPlanRequest>
+    planData: Partial<CreateNutritionPlanRequest>,
   ): Promise<NutritionPlan> => {
-    try {
-      const response = await apiClient.put<NutritionPlan>(
-        `/nutrition-plans/${id}`,
-        planData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating nutrition plan:', error);
-      throw error;
-    }
+    const response = await apiClient.put<NutritionPlanApiResponse>(
+      `${TRAINER_NUTRITION_BASE}/plans/${id}`,
+      planData,
+    );
+    return normalizeNutritionPlan(response.data);
   },
 
   deleteNutritionPlan: async (id: number): Promise<void> => {
-    try {
-      await apiClient.delete(`/nutrition-plans/${id}`);
-    } catch (error) {
-      console.error('Error deleting nutrition plan:', error);
-      throw error;
-    }
+    await apiClient.delete(`${TRAINER_NUTRITION_BASE}/plans/${id}`);
   },
 
-  // Meals
   getMealsByNutritionDay: async (nutritionDayId: number): Promise<Meal[]> => {
-    try {
-      const response = await apiClient.get<Meal[]>(
-        `/meals/day/${nutritionDayId}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching meals:', error);
-      throw error;
-    }
+    const response = await apiClient.get<MealApiResponse[]>(`${MEALS_BASE}/day/${nutritionDayId}`);
+    return response.data.map((meal) => normalizeMeal(meal, nutritionDayId));
   },
 
   getAllMeals: async (): Promise<Meal[]> => {
-    try {
-      const response = await apiClient.get<Meal[]>('/meals');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching all meals:', error);
-      throw error;
-    }
+    const response = await apiClient.get<MealApiResponse[]>(MEALS_BASE);
+    return response.data.map((meal) => normalizeMeal(meal));
   },
 
-  createMeal: async (
-    mealData: CreateMealRequest
-  ): Promise<Meal> => {
-    try {
-      const response = await apiClient.post<Meal>(
-        '/meals',
-        mealData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error creating meal:', error);
-      throw error;
-    }
+  createMeal: async (mealData: CreateMealRequest): Promise<Meal> => {
+    const response = await apiClient.post<MealApiResponse>(MEALS_BASE, mealData);
+    return normalizeMeal(response.data, mealData.nutritionDayId);
   },
 
   getMealById: async (id: number): Promise<Meal> => {
-    try {
-      const response = await apiClient.get<Meal>(`/meals/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching meal:', error);
-      throw error;
-    }
+    const response = await apiClient.get<MealApiResponse>(`${MEALS_BASE}/${id}`);
+    return normalizeMeal(response.data);
   },
 
   updateMeal: async (
     id: number,
-    mealData: Partial<CreateMealRequest>
+    mealData: Partial<CreateMealRequest>,
   ): Promise<Meal> => {
-    try {
-      const response = await apiClient.put<Meal>(
-        `/meals/${id}`,
-        mealData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating meal:', error);
-      throw error;
-    }
+    const response = await apiClient.put<MealApiResponse>(`${MEALS_BASE}/${id}`, mealData);
+    return normalizeMeal(response.data, mealData.nutritionDayId);
   },
 
   deleteMeal: async (id: number): Promise<void> => {
-    try {
-      await apiClient.delete(`/meals/${id}`);
-    } catch (error) {
-      console.error('Error deleting meal:', error);
-      throw error;
-    }
+    await apiClient.delete(`${MEALS_BASE}/${id}`);
   },
 
-  // Client Nutrition Plans
   getClientNutritionPlans: async (clientId: number): Promise<ClientNutritionPlan[]> => {
-    try {
-      const response = await apiClient.get<ClientNutritionPlanApiResponse[]>(
-        `/client-nutrition-plans/client/${clientId}`
-      );
-      return response.data.map(normalizeClientNutritionPlan);
-    } catch (error) {
-      console.error('Error fetching client nutrition plans:', error);
-      throw error;
-    }
+    const response = await apiClient.get<ClientNutritionPlanApiResponse[]>(
+      `${CLIENT_NUTRITION_PLANS_BASE}/client/${clientId}`,
+    );
+    return response.data.map(normalizeClientNutritionPlan);
   },
 
   getActiveClientNutritionPlans: async (clientId: number): Promise<ClientNutritionPlan[]> => {
-    try {
-      const response = await apiClient.get<ClientNutritionPlanApiResponse[]>(
-        `/client-nutrition-plans/client/${clientId}/active`
-      );
-      return response.data.map(normalizeClientNutritionPlan);
-    } catch (error) {
-      console.error('Error fetching active client nutrition plans:', error);
-      throw error;
-    }
+    const response = await apiClient.get<ClientNutritionPlanApiResponse[]>(
+      `${CLIENT_NUTRITION_PLANS_BASE}/client/${clientId}/active`,
+    );
+    return response.data.map(normalizeClientNutritionPlan);
   },
 
-  assignNutritionPlanToClient: async (clientId: number, planId: number): Promise<ClientNutritionPlan> => {
-    try {
-      const response = await apiClient.post<ClientNutritionPlanApiResponse>(
-        `/client-nutrition-plans`,
-        {
-          clientId: clientId,
-          nutritionPlanId: planId,
-          isActive: true // По умолчанию активный
-        }
-      );
-      return normalizeClientNutritionPlan(response.data);
-    } catch (error) {
-      console.error('Error assigning nutrition plan to client:', error);
-      throw error;
-    }
+  assignNutritionPlanToClient: async (
+    clientId: number,
+    planId: number,
+  ): Promise<ClientNutritionPlan> => {
+    const response = await apiClient.post<ClientNutritionPlanApiResponse>(
+      CLIENT_NUTRITION_PLANS_BASE,
+      {
+        clientId,
+        nutritionPlanId: planId,
+        isActive: true,
+      },
+    );
+    return normalizeClientNutritionPlan(response.data);
   },
 
   getNutritionPlansByTrainer: async (trainerId: number): Promise<NutritionPlan[]> => {
-    try {
-      const response = await apiClient.get<NutritionPlan[]>(
-        `/nutrition-plans/trainer/${trainerId}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching nutrition plans by trainer:', error);
-      throw error;
-    }
+    const response = await apiClient.get<NutritionPlanApiResponse[]>(
+      `${NUTRITION_PLANS_BASE}/trainer/${trainerId}`,
+    );
+    return response.data.map(normalizeNutritionPlan);
   },
 
   getNutritionDaysByPlanForTrainer: async (planId: number): Promise<NutritionDay[]> => {
-    try {
-      const response = await apiClient.get<NutritionDay[]>(
-        `/nutrition-days/plan/${planId}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching nutrition days for trainer:', error);
-      throw error;
-    }
+    const response = await apiClient.get<NutritionDayApiResponse[]>(
+      `${TRAINER_NUTRITION_BASE}/plans/${planId}/days`,
+    );
+    return response.data.map(normalizeNutritionDay);
   },
 
-  updateClientNutritionPlan: async (id: number, data: Partial<{ isActive: boolean }>): Promise<ClientNutritionPlan> => {
-    try {
-      const response = await apiClient.put<ClientNutritionPlanApiResponse>(
-        `/client-nutrition-plans/${id}`,
-        data
-      );
-      return normalizeClientNutritionPlan(response.data);
-    } catch (error) {
-      console.error('Error updating client nutrition plan:', error);
-      throw error;
-    }
+  updateClientNutritionPlan: async (
+    id: number,
+    data: Partial<{ isActive: boolean }>,
+  ): Promise<ClientNutritionPlan> => {
+    const response = await apiClient.put<ClientNutritionPlanApiResponse>(
+      `${CLIENT_NUTRITION_PLANS_BASE}/${id}`,
+      data,
+    );
+    return normalizeClientNutritionPlan(response.data);
   },
 };

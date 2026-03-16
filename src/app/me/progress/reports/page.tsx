@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Title, Text, Paper, Card, Button, Group, Pagination, Select, Image, Badge, LoadingOverlay } from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
-import { useAuth } from '@/providers/AuthProvider';
+import { DatePickerInput, type DatesRangeValue } from '@mantine/dates';
 import { useRouter } from 'next/navigation';
 import { progressReportService, ProgressReport } from '@/services/progressReportService';
 
 export default function AllReportsPage() {
-  const { user } = useAuth();
   const router = useRouter();
   const [reports, setReports] = useState<ProgressReport[]>([]);
   const [filteredReports, setFilteredReports] = useState<ProgressReport[]>([]);
@@ -16,7 +14,7 @@ export default function AllReportsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [reportsPerPage] = useState(5);
   const [timeFilter, setTimeFilter] = useState<'all' | 'week' | 'month' | 'custom'>('all');
-  const [customDateRange, setCustomDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [customDateRange, setCustomDateRange] = useState<DatesRangeValue>([null, null]);
 
   useEffect(() => {
     const loadReports = async () => {
@@ -171,13 +169,13 @@ export default function AllReportsPage() {
             ))}
 
             {totalPages > 1 && (
-              <Pagination
-                total={totalPages}
-                page={currentPage}
-                onChange={setCurrentPage}
-                mt="md"
-                justify="center"
-              />
+              <Group justify="center" mt="md">
+                <Pagination
+                  total={totalPages}
+                  value={currentPage}
+                  onChange={setCurrentPage}
+                />
+              </Group>
             )}
           </>
         ) : null}

@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { chatService, ChatUser } from '@/services/chatService';
 import { ClientList } from '@/components/chat/ClientList';
 import { ChatWindow } from '@/components/chat/ChatWindow';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface CurrentUser {
   id: number;
@@ -23,40 +24,26 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const clientIdFromQuery = searchParams.get('clientId');
+  const { user, isInitializing, isAuthenticated } = useAuth();
 
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [clients, setClients] = useState<ChatUser[]>([]);
   const [isClientsLoading, setIsClientsLoading] = useState(true);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-
-  // Получение текущего пользователя
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-
-    console.log('[ChatPage] Token:', token ? 'exists' : 'missing');
-    console.log('[ChatPage] User from localStorage:', userStr);
-
-    if (!token || !userStr) {
-      console.warn('[ChatPage] No token or user, redirecting to /auth');
-      window.location.href = '/auth';
-      return;
-    }
-
-    try {
-      const user = JSON.parse(userStr);
-      console.log('[ChatPage] Parsed user:', user);
-      setCurrentUser(user);
-    } catch (error) {
-      console.error('[ChatPage] Error parsing user:', error);
-      window.location.href = '/auth';
-    }
-  }, []);
+  const currentUser = user as CurrentUser | null;
 
   // Обновление selectedClientId при изменении query параметра
   useEffect(() => {
+    if (isInitializing) {
+      return;
+    }
+
+    if (!isAuthenticated || !currentUser) {
+      router.push('/auth');
+    }
+  }, [isAuthenticated, isInitializing, currentUser, router]);
+
+  useEffect(() => {
     if (clientIdFromQuery) {
-      console.log('[ChatPage] clientIdFromQuery:', clientIdFromQuery);
       setSelectedClientId(parseInt(clientIdFromQuery, 10));
     } else {
       setSelectedClientId(null);
@@ -65,19 +52,14 @@ export default function ChatPage() {
 
   // Загрузка списка клиентов (для тренера)
   useEffect(() => {
-    console.log('[ChatPage] useEffect for loading clients, currentUser:', currentUser);
-    
     if (!currentUser || currentUser.user_type !== 'trainer') {
-      console.log('[ChatPage] Not a trainer, skipping clients load');
       setIsClientsLoading(false);
       return;
     }
 
     const loadClients = async () => {
       try {
-        console.log('[ChatPage] Loading clients for trainer:', currentUser.id);
         const data = await chatService.getUserChats();
-        console.log('[ChatPage] Received clients:', data);
         setClients(data);
 
         // Если клиент не выбран, но есть клиенты в списке, выбираем первого
@@ -103,16 +85,13 @@ export default function ChatPage() {
   );
 
   // Показываем загрузку пока не определили пользователя
-  if (!currentUser) {
+  if (isInitializing || !currentUser) {
     return (
       <Center style={{ height: '100vh' }}>
         <Loader />
       </Center>
     );
   }
-
-  console.log('[ChatPage] Rendering, user_type:', currentUser.user_type);
-
   // Если пользователь - клиент, показываем только чат с его тренером
   if (currentUser.user_type === 'client') {
     if (!currentUser.trainer) {

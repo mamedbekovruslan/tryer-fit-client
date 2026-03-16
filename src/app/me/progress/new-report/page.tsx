@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Container, Title, Text, Paper, Button, Group, NumberInput, Alert, Image, FileInput } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { useAuth } from '@/providers/AuthProvider';
 import { progressReportService } from '@/services/progressReportService';
 
 // Используем типы из сервиса
@@ -36,8 +36,21 @@ interface LocalProgressReport {
   notes: string;
 }
 
+type NumericField =
+  | 'weight'
+  | 'waist'
+  | 'hips'
+  | 'chest'
+  | 'arms'
+  | 'thighs'
+  | 'bodyFat'
+  | 'muscleMass';
+
+function normalizeNumberInputValue(value: string | number): number | '' {
+  return typeof value === 'number' ? value : '';
+}
+
 export default function NewProgressReportPage() {
-  const { user } = useAuth();
   const [reportData, setReportData] = useState<LocalProgressReport>({
     date: new Date(),
     weight: '',
@@ -55,7 +68,10 @@ export default function NewProgressReportPage() {
   const [success, setSuccess] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const handleChange = (field: keyof LocalProgressReport, value: any) => {
+  const handleChange = <K extends keyof LocalProgressReport>(
+    field: K,
+    value: LocalProgressReport[K],
+  ) => {
     setReportData(prev => ({
       ...prev,
       [field]: value
@@ -69,6 +85,10 @@ export default function NewProgressReportPage() {
         return newErrors;
       });
     }
+  };
+
+  const handleNumberChange = (field: NumericField, value: string | number) => {
+    handleChange(field, normalizeNumberInputValue(value));
   };
 
   const fileToDataUrl = (file: File): Promise<string> =>
@@ -130,7 +150,7 @@ export default function NewProgressReportPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validate()) {
@@ -146,7 +166,7 @@ export default function NewProgressReportPage() {
 
       // Подготовка данных для отправки
       const progressReportData = {
-        date: reportData.date!.toISOString(), // Преобразуем дату в ISO строку для корректной передачи
+        date: reportData.date!,
         weight: typeof reportData.weight === 'number' ? reportData.weight : undefined,
         waist: typeof reportData.waist === 'number' ? reportData.waist : undefined,
         hips: typeof reportData.hips === 'number' ? reportData.hips : undefined,
@@ -205,7 +225,12 @@ export default function NewProgressReportPage() {
             label="Дата"
             placeholder="Выберите дату"
             value={reportData.date}
-            onChange={(date) => handleChange('date', date)}
+            onChange={(date) =>
+              handleChange(
+                'date',
+                typeof date === 'string' ? new Date(date) : date,
+              )
+            }
             required
             error={errors.date}
             mb="md"
@@ -215,7 +240,7 @@ export default function NewProgressReportPage() {
             label="Вес (кг)"
             placeholder="Введите вес"
             value={reportData.weight}
-            onChange={(value) => handleChange('weight', value)}
+            onChange={(value) => handleNumberChange('weight', value)}
             required
             error={errors.weight}
             min={1}
@@ -227,7 +252,7 @@ export default function NewProgressReportPage() {
             label="Обхват талии (см)"
             placeholder="Введите обхват талии"
             value={reportData.waist}
-            onChange={(value) => handleChange('waist', value)}
+            onChange={(value) => handleNumberChange('waist', value)}
             required
             error={errors.waist}
             min={1}
@@ -239,7 +264,7 @@ export default function NewProgressReportPage() {
             label="Обхват бедер (см)"
             placeholder="Введите обхват бедер"
             value={reportData.hips}
-            onChange={(value) => handleChange('hips', value)}
+            onChange={(value) => handleNumberChange('hips', value)}
             required
             error={errors.hips}
             min={1}
@@ -253,7 +278,7 @@ export default function NewProgressReportPage() {
             label="Обхват груди (см)"
             placeholder="Введите обхват груди"
             value={reportData.chest}
-            onChange={(value) => handleChange('chest', value)}
+            onChange={(value) => handleNumberChange('chest', value)}
             min={1}
             max={300}
             mb="md"
@@ -263,7 +288,7 @@ export default function NewProgressReportPage() {
             label="Обхват рук (см)"
             placeholder="Введите обхват рук"
             value={reportData.arms}
-            onChange={(value) => handleChange('arms', value)}
+            onChange={(value) => handleNumberChange('arms', value)}
             min={1}
             max={300}
             mb="md"
@@ -273,7 +298,7 @@ export default function NewProgressReportPage() {
             label="Обхват бедер (ноги) (см)"
             placeholder="Введите обхват бедер (ноги)"
             value={reportData.thighs}
-            onChange={(value) => handleChange('thighs', value)}
+            onChange={(value) => handleNumberChange('thighs', value)}
             min={1}
             max={300}
             mb="md"
@@ -283,7 +308,7 @@ export default function NewProgressReportPage() {
             label="Процент жира (%)"
             placeholder="Введите процент жира"
             value={reportData.bodyFat}
-            onChange={(value) => handleChange('bodyFat', value)}
+            onChange={(value) => handleNumberChange('bodyFat', value)}
             min={0}
             max={100}
             mb="md"
@@ -293,7 +318,7 @@ export default function NewProgressReportPage() {
             label="Мышечная масса (кг)"
             placeholder="Введите мышечную массу"
             value={reportData.muscleMass}
-            onChange={(value) => handleChange('muscleMass', value)}
+            onChange={(value) => handleNumberChange('muscleMass', value)}
             min={1}
             max={500}
             mb="md"

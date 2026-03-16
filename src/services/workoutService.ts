@@ -1,5 +1,8 @@
 import apiClient from '@/lib/api';
 
+const TRAINER_WORKOUT_BASE = '/trainer/workout';
+const CLIENT_WORKOUT_BASE = '/workout';
+
 export interface WorkoutCategory {
   id: number;
   name: string;
@@ -8,25 +11,58 @@ export interface WorkoutCategory {
   updatedAt: Date;
 }
 
-export interface WorkoutDay {
+type WorkoutProgramApiResponse = {
   id: number;
   name: string;
   description?: string;
-  dayOrder: number;
-  workoutProgramId: number;
+  workoutCategory?: WorkoutCategory;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
 export interface WorkoutProgram {
   id: number;
   name: string;
   description?: string;
-  workoutCategoryId: number;
+  workoutCategoryId?: number;
   createdAt: Date;
   updatedAt: Date;
   workoutCategory?: WorkoutCategory;
 }
+
+type WorkoutDayApiResponse = {
+  id: number;
+  name: string;
+  description?: string;
+  dayOrder: number;
+  exercises?: ExerciseApiResponse[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export interface WorkoutDay {
+  id: number;
+  name: string;
+  description?: string;
+  dayOrder: number;
+  workoutProgramId?: number;
+  exercises?: Exercise[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+type ExerciseApiResponse = {
+  id: number;
+  name: string;
+  description?: string;
+  sets?: number;
+  reps?: string;
+  weight?: string;
+  restTime?: string;
+  exerciseOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export interface Exercise {
   id: number;
@@ -37,10 +73,23 @@ export interface Exercise {
   weight?: string;
   restTime?: string;
   exerciseOrder: number;
-  workoutDayId: number;
+  workoutDayId?: number;
   createdAt: Date;
   updatedAt: Date;
 }
+
+type ClientWorkoutProgramApiResponse = {
+  id: number;
+  client: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  workoutProgram?: WorkoutProgramApiResponse;
+  isActive: boolean;
+  assignedAt: Date;
+  updatedAt: Date;
+};
 
 export interface ClientWorkoutProgram {
   id: number;
@@ -84,319 +133,229 @@ export interface CreateExerciseRequest {
   workoutDayId: number;
 }
 
+function normalizeWorkoutProgram(program: WorkoutProgramApiResponse): WorkoutProgram {
+  return {
+    ...program,
+    workoutCategoryId: program.workoutCategory?.id,
+    workoutCategory: program.workoutCategory,
+  };
+}
+
+function normalizeExercise(exercise: ExerciseApiResponse, workoutDayId?: number): Exercise {
+  return {
+    ...exercise,
+    workoutDayId,
+  };
+}
+
+function normalizeWorkoutDay(day: WorkoutDayApiResponse, workoutProgramId?: number): WorkoutDay {
+  return {
+    ...day,
+    workoutProgramId,
+    exercises: day.exercises?.map((exercise) => normalizeExercise(exercise, day.id)),
+  };
+}
+
+function normalizeClientWorkoutProgram(
+  program: ClientWorkoutProgramApiResponse,
+): ClientWorkoutProgram {
+  return {
+    id: program.id,
+    client: program.client,
+    workoutProgram: program.workoutProgram
+      ? normalizeWorkoutProgram(program.workoutProgram)
+      : {
+          id: 0,
+          name: '',
+          createdAt: program.assignedAt,
+          updatedAt: program.updatedAt,
+        },
+    isActive: program.isActive,
+    assignedAt: program.assignedAt,
+    updatedAt: program.updatedAt,
+  };
+}
+
 export const workoutService = {
-  // Workout Categories
   getWorkoutCategories: async (): Promise<WorkoutCategory[]> => {
-    try {
-      const response = await apiClient.get<WorkoutCategory[]>('/trainer/workout/categories');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching workout categories:', error);
-      throw error;
-    }
+    const response = await apiClient.get<WorkoutCategory[]>(`${TRAINER_WORKOUT_BASE}/categories`);
+    return response.data;
   },
 
   createWorkoutCategory: async (
-    categoryData: CreateWorkoutCategoryRequest
+    categoryData: CreateWorkoutCategoryRequest,
   ): Promise<WorkoutCategory> => {
-    try {
-      const response = await apiClient.post<WorkoutCategory>(
-        '/trainer/workout/categories',
-        categoryData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error creating workout category:', error);
-      throw error;
-    }
+    const response = await apiClient.post<WorkoutCategory>(
+      `${TRAINER_WORKOUT_BASE}/categories`,
+      categoryData,
+    );
+    return response.data;
   },
 
   updateWorkoutCategory: async (
     id: number,
-    categoryData: Partial<CreateWorkoutCategoryRequest>
+    categoryData: Partial<CreateWorkoutCategoryRequest>,
   ): Promise<WorkoutCategory> => {
-    try {
-      const response = await apiClient.put<WorkoutCategory>(
-        `/trainer/workout/categories/${id}`,
-        categoryData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating workout category:', error);
-      throw error;
-    }
+    const response = await apiClient.put<WorkoutCategory>(
+      `${TRAINER_WORKOUT_BASE}/categories/${id}`,
+      categoryData,
+    );
+    return response.data;
   },
 
   deleteWorkoutCategory: async (id: number): Promise<void> => {
-    try {
-      await apiClient.delete(`/trainer/workout/categories/${id}`);
-    } catch (error) {
-      console.error('Error deleting workout category:', error);
-      throw error;
-    }
+    await apiClient.delete(`${TRAINER_WORKOUT_BASE}/categories/${id}`);
   },
 
-  // Workout Programs
   getWorkoutProgramsByCategory: async (categoryId: number): Promise<WorkoutProgram[]> => {
-    try {
-      const response = await apiClient.get<WorkoutProgram[]>(
-        `/trainer/workout/categories/${categoryId}/programs`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching workout programs:', error);
-      throw error;
-    }
+    const response = await apiClient.get<WorkoutProgramApiResponse[]>(
+      `${TRAINER_WORKOUT_BASE}/categories/${categoryId}/programs`,
+    );
+    return response.data.map(normalizeWorkoutProgram);
   },
 
   getAllWorkoutPrograms: async (): Promise<WorkoutProgram[]> => {
-    try {
-      const response = await apiClient.get<WorkoutProgram[]>('/trainer/workout/programs');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching all workout programs:', error);
-      throw error;
-    }
+    const response = await apiClient.get<WorkoutProgramApiResponse[]>(
+      `${TRAINER_WORKOUT_BASE}/programs`,
+    );
+    return response.data.map(normalizeWorkoutProgram);
   },
 
   createWorkoutProgram: async (
-    planData: CreateWorkoutProgramRequest
+    programData: CreateWorkoutProgramRequest,
   ): Promise<WorkoutProgram> => {
-    try {
-      const response = await apiClient.post<WorkoutProgram>(
-        '/trainer/workout/programs',
-        planData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error creating workout program:', error);
-      throw error;
-    }
+    const response = await apiClient.post<WorkoutProgramApiResponse>(
+      `${TRAINER_WORKOUT_BASE}/programs`,
+      programData,
+    );
+    return normalizeWorkoutProgram(response.data);
   },
 
   getWorkoutProgramById: async (id: number): Promise<WorkoutProgram> => {
-    try {
-      const response = await apiClient.get<WorkoutProgram>(`/trainer/workout/programs/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching workout program:', error);
-      throw error;
-    }
+    const response = await apiClient.get<WorkoutProgramApiResponse>(
+      `${TRAINER_WORKOUT_BASE}/programs/${id}`,
+    );
+    return normalizeWorkoutProgram(response.data);
   },
 
   updateWorkoutProgram: async (
     id: number,
-    planData: Partial<CreateWorkoutProgramRequest>
+    programData: Partial<CreateWorkoutProgramRequest>,
   ): Promise<WorkoutProgram> => {
-    try {
-      const response = await apiClient.put<WorkoutProgram>(
-        `/trainer/workout/programs/${id}`,
-        planData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating workout program:', error);
-      throw error;
-    }
+    const response = await apiClient.put<WorkoutProgramApiResponse>(
+      `${TRAINER_WORKOUT_BASE}/programs/${id}`,
+      programData,
+    );
+    return normalizeWorkoutProgram(response.data);
   },
 
   deleteWorkoutProgram: async (id: number): Promise<void> => {
-    try {
-      await apiClient.delete(`/trainer/workout/programs/${id}`);
-    } catch (error) {
-      console.error('Error deleting workout program:', error);
-      throw error;
-    }
+    await apiClient.delete(`${TRAINER_WORKOUT_BASE}/programs/${id}`);
   },
 
-  // Workout Days
   getWorkoutDaysByProgram: async (programId: number): Promise<WorkoutDay[]> => {
-    try {
-      const response = await apiClient.get<WorkoutDay[]>(
-        `/trainer/workout/programs/${programId}/days`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching workout days:', error);
-      throw error;
-    }
+    const response = await apiClient.get<WorkoutDayApiResponse[]>(
+      `${TRAINER_WORKOUT_BASE}/programs/${programId}/days`,
+    );
+    return response.data.map((day) => normalizeWorkoutDay(day, programId));
   },
 
   createWorkoutDay: async (
-    dayData: CreateWorkoutDayRequest
+    dayData: CreateWorkoutDayRequest,
   ): Promise<WorkoutDay> => {
-    try {
-      const response = await apiClient.post<WorkoutDay>(
-        '/trainer/workout/days',
-        dayData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error creating workout day:', error);
-      throw error;
-    }
-  },
-
-  getWorkoutDayById: async (id: number): Promise<WorkoutDay> => {
-    try {
-      const response = await apiClient.get<WorkoutDay>(`/trainer/workout/days/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching workout day:', error);
-      throw error;
-    }
+    const response = await apiClient.post<WorkoutDayApiResponse>(
+      `${TRAINER_WORKOUT_BASE}/days`,
+      dayData,
+    );
+    return normalizeWorkoutDay(response.data, dayData.workoutProgramId);
   },
 
   updateWorkoutDay: async (
     id: number,
-    dayData: Partial<CreateWorkoutDayRequest>
+    dayData: Partial<CreateWorkoutDayRequest>,
   ): Promise<WorkoutDay> => {
-    try {
-      const response = await apiClient.put<WorkoutDay>(
-        `/trainer/workout/days/${id}`,
-        dayData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating workout day:', error);
-      throw error;
-    }
+    const response = await apiClient.put<WorkoutDayApiResponse>(
+      `${TRAINER_WORKOUT_BASE}/days/${id}`,
+      dayData,
+    );
+    return normalizeWorkoutDay(response.data, dayData.workoutProgramId);
   },
 
   deleteWorkoutDay: async (id: number): Promise<void> => {
-    try {
-      await apiClient.delete(`/trainer/workout/days/${id}`);
-    } catch (error) {
-      console.error('Error deleting workout day:', error);
-      throw error;
-    }
+    await apiClient.delete(`${TRAINER_WORKOUT_BASE}/days/${id}`);
   },
 
-  // Exercises
   getExercisesByDay: async (dayId: number): Promise<Exercise[]> => {
-    try {
-      const response = await apiClient.get<Exercise[]>(
-        `/trainer/workout/days/${dayId}/exercises`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching exercises:', error);
-      throw error;
-    }
-  },
-
-  getAllExercises: async (): Promise<Exercise[]> => {
-    try {
-      const response = await apiClient.get<Exercise[]>('/trainer/workout/exercises');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching all exercises:', error);
-      throw error;
-    }
+    const response = await apiClient.get<ExerciseApiResponse[]>(
+      `${TRAINER_WORKOUT_BASE}/days/${dayId}/exercises`,
+    );
+    return response.data.map((exercise) => normalizeExercise(exercise, dayId));
   },
 
   createExercise: async (
-    exerciseData: CreateExerciseRequest
+    exerciseData: CreateExerciseRequest,
   ): Promise<Exercise> => {
-    try {
-      const response = await apiClient.post<Exercise>(
-        '/trainer/workout/exercises',
-        exerciseData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error creating exercise:', error);
-      throw error;
-    }
-  },
-
-  getExerciseById: async (id: number): Promise<Exercise> => {
-    try {
-      const response = await apiClient.get<Exercise>(`/trainer/workout/exercises/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching exercise:', error);
-      throw error;
-    }
+    const response = await apiClient.post<ExerciseApiResponse>(
+      `${TRAINER_WORKOUT_BASE}/exercises`,
+      exerciseData,
+    );
+    return normalizeExercise(response.data, exerciseData.workoutDayId);
   },
 
   updateExercise: async (
     id: number,
-    exerciseData: Partial<CreateExerciseRequest>
+    exerciseData: Partial<CreateExerciseRequest>,
   ): Promise<Exercise> => {
-    try {
-      const response = await apiClient.put<Exercise>(
-        `/trainer/workout/exercises/${id}`,
-        exerciseData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating exercise:', error);
-      throw error;
-    }
+    const response = await apiClient.put<ExerciseApiResponse>(
+      `${TRAINER_WORKOUT_BASE}/exercises/${id}`,
+      exerciseData,
+    );
+    return normalizeExercise(response.data, exerciseData.workoutDayId);
   },
 
   deleteExercise: async (id: number): Promise<void> => {
-    try {
-      await apiClient.delete(`/trainer/workout/exercises/${id}`);
-    } catch (error) {
-      console.error('Error deleting exercise:', error);
-      throw error;
-    }
+    await apiClient.delete(`${TRAINER_WORKOUT_BASE}/exercises/${id}`);
   },
 
-  // Client Workout Programs
   getClientWorkoutPrograms: async (clientId: number): Promise<ClientWorkoutProgram[]> => {
-    try {
-      const response = await apiClient.get<ClientWorkoutProgram[]>(
-        `/trainer/workout/clients/${clientId}/programs`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching client workout programs:', error);
-      throw error;
-    }
+    const response = await apiClient.get<ClientWorkoutProgramApiResponse[]>(
+      `${TRAINER_WORKOUT_BASE}/clients/${clientId}/programs`,
+    );
+    return response.data.map(normalizeClientWorkoutProgram);
   },
 
-  getActiveClientWorkoutPrograms: async (clientId: number): Promise<ClientWorkoutProgram[]> => {
-    try {
-      const response = await apiClient.get<ClientWorkoutProgram[]>(
-        `/workout/clients/${clientId}/active`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching active client workout programs:', error);
-      throw error;
-    }
+  getActiveClientWorkoutPrograms: async (
+    clientId: number,
+  ): Promise<ClientWorkoutProgram[]> => {
+    const response = await apiClient.get<ClientWorkoutProgramApiResponse[]>(
+      `${CLIENT_WORKOUT_BASE}/clients/${clientId}/active`,
+    );
+    return response.data.map(normalizeClientWorkoutProgram);
   },
 
-  assignWorkoutProgramToClient: async (clientId: number, programId: number): Promise<ClientWorkoutProgram> => {
-    try {
-      const response = await apiClient.post<ClientWorkoutProgram>(
-        `/trainer/workout/client-programs`,
-        {
-          clientId: clientId,
-          workoutProgramId: programId,
-          isActive: true
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error assigning workout program to client:', error);
-      throw error;
-    }
+  assignWorkoutProgramToClient: async (
+    clientId: number,
+    programId: number,
+  ): Promise<ClientWorkoutProgram> => {
+    const response = await apiClient.post<ClientWorkoutProgramApiResponse>(
+      `${TRAINER_WORKOUT_BASE}/client-programs`,
+      {
+        clientId,
+        workoutProgramId: programId,
+        isActive: true,
+      },
+    );
+    return normalizeClientWorkoutProgram(response.data);
   },
 
-  updateClientWorkoutProgram: async (id: number, data: Partial<{ isActive: boolean }>): Promise<ClientWorkoutProgram> => {
-    try {
-      const response = await apiClient.put<ClientWorkoutProgram>(
-        `/trainer/workout/client-programs/${id}`,
-        data
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating client workout program:', error);
-      throw error;
-    }
+  updateClientWorkoutProgram: async (
+    id: number,
+    data: Partial<{ isActive: boolean }>,
+  ): Promise<ClientWorkoutProgram> => {
+    const response = await apiClient.put<ClientWorkoutProgramApiResponse>(
+      `${TRAINER_WORKOUT_BASE}/client-programs/${id}`,
+      data,
+    );
+    return normalizeClientWorkoutProgram(response.data);
   },
 };

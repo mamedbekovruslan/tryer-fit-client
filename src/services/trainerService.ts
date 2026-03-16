@@ -1,4 +1,5 @@
 import apiClient from '@/lib/api';
+import { normalizeTrainer } from './modelAdapters';
 
 export interface Trainer {
   id: number;
@@ -7,19 +8,27 @@ export interface Trainer {
   first_name?: string;
   last_name?: string;
   middle_name?: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
   gender?: string;
   height?: number;
   weight?: number;
   phone?: string;
   birth_date?: string;
+  birthDate?: string;
   education?: string;
   institution?: string;
   degree?: string;
   specialization?: string;
   certificate_number?: string;
   photo_urls?: string[];
+  certificateNumber?: string;
+  photoUrls?: string[];
   created_at: string;
   updated_at: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UpdateTrainerData {
@@ -63,7 +72,7 @@ export const trainerService = {
   register: async (trainerData: CreateTrainerRequest): Promise<Trainer> => {
     try {
       const response = await apiClient.post('/trainers/register', trainerData);
-      return response.data;
+      return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
       console.error('Error registering trainer:', error);
       throw error;
@@ -72,10 +81,8 @@ export const trainerService = {
 
   getMyTrainerProfile: async (): Promise<Trainer> => {
     try {
-      // Используем эндпоинт /trainers/profile, который должен возвращать полную информацию о текущем тренере
-      // Этот эндпоинт нужно реализовать на бэкенде по аналогии с /clients/profile
       const response = await apiClient.get('/trainers/profile');
-      return response.data;
+      return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
       console.error('Error fetching trainer profile:', error);
       throw error;
@@ -85,7 +92,7 @@ export const trainerService = {
   getTrainerById: async (id: number): Promise<Trainer> => {
     try {
       const response = await apiClient.get(`/trainers/${id}`);
-      return response.data;
+      return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
       console.error('Error fetching trainer:', error);
       throw error;
@@ -95,7 +102,7 @@ export const trainerService = {
   updateTrainer: async (id: number, data: UpdateTrainerData): Promise<Trainer> => {
     try {
       const response = await apiClient.put(`/trainers/${id}`, data);
-      return response.data;
+      return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
       console.error('Error updating trainer:', error);
       throw error;
@@ -108,7 +115,7 @@ export const trainerService = {
       data[field as keyof UpdateTrainerData] = value;
 
       const response = await apiClient.patch(`/trainers/${id}`, data);
-      return response.data;
+      return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
       console.error(`Error updating trainer field ${field}:`, error);
       throw error;

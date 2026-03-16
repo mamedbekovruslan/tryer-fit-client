@@ -15,20 +15,19 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const router = useRouter();
   const [opened, { toggle }] = useDisclosure(false);
   const theme = useMantineTheme();
-  const [loading, setLoading] = useState(true);
+  const { user, isAuthenticated, isInitializing } = useAuth();
 
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('token');
-    if (!token) {
-      // Redirect to login if not authenticated
-      router.push('/auth/login');
-    } else {
-      setLoading(false);
+    if (isInitializing) {
+      return;
     }
-  }, [router]);
 
-  if (loading) {
+    if (!isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [router, isAuthenticated, isInitializing]);
+
+  if (isInitializing) {
     return (
       <Container style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <Center>
@@ -37,8 +36,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       </Container>
     );
   }
-
-  const { user } = useAuth();
 
   return (
     <AppShell
