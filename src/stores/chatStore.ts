@@ -138,23 +138,26 @@ export const useChatStore = create<ChatStoreState>((set, get) => ({
   receiveMessage: (message, currentUserId) => {
     const otherUserId = getOtherUserId(message, currentUserId);
 
-    set((state) => ({
-      messagesByUserId: {
-        ...state.messagesByUserId,
-        [otherUserId]: appendUniqueMessage(
-          state.messagesByUserId[otherUserId] ?? [],
-          message,
-        ),
-      },
-      clients: withLastMessage(state.clients, otherUserId, (client) => ({
-        ...client,
-        lastMessage: message,
-        unreadCount:
-          message.senderId === currentUserId
-            ? client.unreadCount
-            : client.unreadCount + 1,
-      })),
-    }));
+    set((state) => {
+      const currentMessages = state.messagesByUserId[otherUserId] ?? [];
+      const nextMessages = appendUniqueMessage(currentMessages, message);
+      const isDuplicate = nextMessages === currentMessages;
+
+      return {
+        messagesByUserId: {
+          ...state.messagesByUserId,
+          [otherUserId]: nextMessages,
+        },
+        clients: withLastMessage(state.clients, otherUserId, (client) => ({
+          ...client,
+          lastMessage: message,
+          unreadCount:
+            message.senderId === currentUserId || isDuplicate
+              ? client.unreadCount
+              : client.unreadCount + 1,
+        })),
+      };
+    });
   },
 
   receiveSentMessage: (message, currentUserId) => {
