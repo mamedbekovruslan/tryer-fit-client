@@ -74,7 +74,6 @@ export const trainerService = {
       const response = await apiClient.post('/trainers/register', trainerData);
       return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
-      console.error('Error registering trainer:', error);
       throw error;
     }
   },
@@ -84,7 +83,6 @@ export const trainerService = {
       const response = await apiClient.get('/trainers/profile');
       return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
-      console.error('Error fetching trainer profile:', error);
       throw error;
     }
   },
@@ -94,7 +92,6 @@ export const trainerService = {
       const response = await apiClient.get(`/trainers/${id}`);
       return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
-      console.error('Error fetching trainer:', error);
       throw error;
     }
   },
@@ -104,7 +101,6 @@ export const trainerService = {
       const response = await apiClient.put(`/trainers/${id}`, data);
       return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
-      console.error('Error updating trainer:', error);
       throw error;
     }
   },
@@ -117,51 +113,42 @@ export const trainerService = {
       const response = await apiClient.patch(`/trainers/${id}`, data);
       return normalizeTrainer(response.data) as Trainer;
     } catch (error) {
-      console.error(`Error updating trainer field ${field}:`, error);
       throw error;
     }
   },
 
-  // Получить клиентов, привязанных к тренеру
   getClientsByTrainerId: async (trainerId: number): Promise<any[]> => {
     try {
       const response = await apiClient.get(`/trainers/${trainerId}/clients`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching trainer clients:', error);
       throw error;
     }
   },
 
-  // Получить клиентов, которые не привязаны ни к какому тренеру
   getUnassignedClients: async (): Promise<any[]> => {
     try {
       const response = await apiClient.get('/trainers/unassigned-clients');
       return response.data;
     } catch (error) {
-      console.error('Error fetching unassigned clients:', error);
       throw error;
     }
   },
 
-  // Привязать клиента к тренеру
   assignClientToTrainer: async (trainerId: number, clientId: number): Promise<any> => {
     try {
       const response = await apiClient.put(`/trainers/${trainerId}/assign-client/${clientId}`);
       return response.data;
     } catch (error) {
-      console.error('Error assigning client to trainer:', error);
       throw error;
     }
   },
 
-  // Отвязать клиента от тренера
   unassignClientFromTrainer: async (trainerId: number, clientId: number): Promise<any> => {
     try {
       const response = await apiClient.delete(`/trainers/${trainerId}/unassign-client/${clientId}`);
       return response.data;
     } catch (error) {
-      console.error('Error unassigning client from trainer:', error);
       throw error;
     }
   },

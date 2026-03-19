@@ -23,7 +23,6 @@ import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// Типы данных
 interface Meal {
   name: string;
   foods: string[];
@@ -63,7 +62,6 @@ export default function CreateNutritionDayPlanPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // Моковые данные для еды
   const foodOptions = [
     { value: 'oatmeal_with_fruits', label: 'Овсянка с фруктами' },
     { value: 'greek_yogurt', label: 'Греческий йогурт' },
@@ -101,7 +99,6 @@ export default function CreateNutritionDayPlanPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Валидация
     if (!planData.day_name.trim()) {
       setError('Название дня обязательно');
       return;
@@ -112,14 +109,10 @@ export default function CreateNutritionDayPlanPage() {
       return;
     }
     
-    // Здесь будет вызов API для сохранения плана питания
-    console.log('Сохраняем план питания:', planData);
     
-    // Имитация успешного сохранения
     setSuccess(true);
     setError('');
     
-    // Через 2 секунды перенаправляем обратно к списку планов
     setTimeout(() => {
       router.push(`/admin/nutrition/${categoryId}/${subcategoryId}`);
     }, 2000);

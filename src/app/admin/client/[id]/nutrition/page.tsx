@@ -29,17 +29,14 @@ export default function ClientNutritionPlansPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // Состояния для данных
   const [clientNutritionPlans, setClientNutritionPlans] = useState<ClientNutritionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Загрузка назначенных планов питания клиента
   useEffect(() => {
     const fetchClientNutritionPlans = async () => {
       try {
         setLoading(true);
-        // Загружаем все назначенные планы питания для клиента
         const plans = await nutritionService.getClientNutritionPlans(Number(clientId));
         setClientNutritionPlans(plans);
       } catch (err) {
@@ -66,14 +63,11 @@ export default function ClientNutritionPlansPage() {
     );
   }
 
-  // Функция для переключения статуса плана
   const togglePlanStatus = async (planId: number, newStatus: boolean) => {
     try {
       setLoading(true);
-      // Обновляем статус плана
       await nutritionService.updateClientNutritionPlan(planId, { isActive: newStatus });
 
-      // Обновляем локальный список планов
       setClientNutritionPlans(prevPlans =>
         prevPlans.map(plan =>
           plan.id === planId ? { ...plan, isActive: newStatus } : plan

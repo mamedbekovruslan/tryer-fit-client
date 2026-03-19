@@ -46,7 +46,6 @@ export default function ProgressPage() {
   const [progressData, setProgressData] = useState<ProgressReport[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Загрузка данных прогресса
   useEffect(() => {
     const fetchProgressData = async () => {
       try {
@@ -54,7 +53,6 @@ export default function ProgressPage() {
         const data = await progressReportService.getAllProgressReports();
         setProgressData(data);
       } catch (error) {
-        console.error('Error fetching progress data:', error);
       } finally {
         setLoading(false);
       }
@@ -63,7 +61,6 @@ export default function ProgressPage() {
     fetchProgressData();
   }, []);
 
-  // Фильтрация данных в зависимости от выбранного временного диапазона
   const filteredData = progressData.filter(point => {
     const pointDate = new Date(point.date);
 
@@ -82,7 +79,6 @@ export default function ProgressPage() {
     return true;
   });
 
-  // Преобразование данных для графика
   const chartData = filteredData.map(item => ({
     date: item.date,
     weight: item.weight || 0,
@@ -97,7 +93,6 @@ export default function ProgressPage() {
     }
   }));
 
-  // Обработчики изменений
   const handleTimeRangeChange = (value: string | null) => {
     if (value === 'month' || value === 'year' || value === 'custom') {
       setTimeRange(value);

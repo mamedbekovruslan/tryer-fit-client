@@ -121,7 +121,6 @@ export default function NutritionPage() {
   );
 }
 
-// Компонент для отображения деталей плана питания
 function NutritionPlanDetails({ nutritionPlan }: { nutritionPlan: any }) {
   const [nutritionDays, setNutritionDays] = useState<NutritionDay[]>([]);
   const [mealsByDay, setMealsByDay] = useState<{[key: number]: Meal[]}>({});
@@ -139,20 +138,17 @@ function NutritionPlanDetails({ nutritionPlan }: { nutritionPlan: any }) {
 
       setNutritionDays(days);
 
-      // Загрузим приемы пищи для каждого дня
       const mealsData: {[key: number]: Meal[]} = {};
       for (const day of days) {
         try {
           const meals = await nutritionService.getMealsByNutritionDay(day.id);
           mealsData[day.id] = meals;
         } catch (error) {
-          // Если дня нет, пропускаем
           mealsData[day.id] = [];
         }
       }
       setMealsByDay(mealsData);
     } catch (error) {
-      console.error('Error loading plan details:', error);
     } finally {
       setLoading(false);
     }

@@ -14,7 +14,6 @@ function normalizeOptionalNumber(value: string | number): number | undefined {
   return typeof value === 'number' ? value : undefined;
 }
 
-// Типы данных
 interface ExtendedClient {
   id: number;
   username: string;
@@ -74,34 +73,25 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    // Загружаем данные тренера и клиентов
     const loadTrainerData = async () => {
       if (user && user.user_type === 'trainer') {
         try {
-          // Получаем данные профиля текущего тренера с бэкенда
           const trainerData = await trainerService.getMyTrainerProfile();
           setTrainer(trainerData);
 
-          // Загружаем клиентов, привязанных к тренеру
           const clientsInWorkData = await trainerService.getClientsByTrainerId(trainerData.id);
           setClientsInWork(clientsInWorkData);
 
-          // Загружаем клиентов, которые не привязаны к тренеру
           const newClientsData = await trainerService.getUnassignedClients();
           setNewClients(newClientsData);
 
         } catch (error) {
-          console.error('Error loading trainer data:', error);
-          // Если эндпоинт /trainers/profile не реализован на бэкенде,
-          // используем базовую информацию из объекта user
           const basicTrainerInfo = {
             id: user.id,
             username: user.username,
             email: user.email,
             first_name: user.first_name || '',
             last_name: user.last_name || '',
-            // Остальные поля могут быть пустыми или заполненными по умолчанию
-            // поскольку полная информация недоступна без соответствующего эндпоинта
             specialization: '',
             education: '',
             degree: '',
@@ -109,7 +99,6 @@ export default function AdminPage() {
             photo_urls: [],
             created_at: '',
             updated_at: '',
-            // Добавим другие возможные поля
             middle_name: '',
             gender: '',
             height: undefined,
@@ -128,16 +117,13 @@ export default function AdminPage() {
     loadTrainerData();
   }, [user]);
 
-  // Загрузка данных чата отдельно
   useEffect(() => {
     if (trainer) {
       const loadChatData = async () => {
         try {
           const chats = await chatService.getUserChats();
-          console.log('Chat clients loaded:', chats);
           setChatClients(chats);
         } catch (error) {
-          console.error('Error loading chat data:', error);
         }
       };
 
@@ -148,16 +134,12 @@ export default function AdminPage() {
   const handleSave = async () => {
     if (trainer) {
       try {
-        // Отправляем обновленные данные на бэкенд
         const updatedTrainer = await trainerService.updateTrainer(trainer.id, formData);
 
-        // Обновляем локальное состояние
         setTrainer(updatedTrainer);
 
-        // Выходим из режима редактирования
         setIsEditing(false);
       } catch (error) {
-        console.error('Error saving trainer data:', error);
       }
     }
   };
@@ -178,7 +160,6 @@ export default function AdminPage() {
     setFormData((prev) => ({ ...prev, photo_urls: [dataUrl] }));
   };
 
-  // Обновляем formData при переходе в режим редактирования
   useEffect(() => {
     if (trainer && isEditing) {
       setFormData({
@@ -201,46 +182,34 @@ export default function AdminPage() {
   }, [isEditing, trainer]);
 
   const handleAddClient = async (clientId: number) => {
-    // Реализация добавления клиента через API
     if (!user || !trainer) return;
 
     try {
-      // Вызываем API для привязки клиента к тренеру
       const assignedClient = await trainerService.assignClientToTrainer(trainer.id, clientId);
 
-      // Удаляем клиента из списка новых клиентов
       const updatedNewClients = newClients.filter(client => client.id !== clientId);
 
-      // Добавляем клиента в список клиентов в работе
       const updatedClientsInWork = [...clientsInWork, assignedClient];
 
-      // Обновляем состояние
       setNewClients(updatedNewClients);
       setClientsInWork(updatedClientsInWork);
     } catch (error) {
-      console.error('Error assigning client to trainer:', error);
     }
   };
 
   const handleRemoveClient = async (clientId: number) => {
-    // Реализация удаления клиента через API
     if (!user || !trainer) return;
 
     try {
-      // Вызываем API для отвязки клиента от тренера
       const unassignedClient = await trainerService.unassignClientFromTrainer(trainer.id, clientId);
 
-      // Удаляем клиента из списка клиентов в работе
       const updatedClientsInWork = clientsInWork.filter(client => client.id !== clientId);
 
-      // Добавляем клиента в список новых клиентов
       const updatedNewClients = [...newClients, unassignedClient];
 
-      // Обновляем состояние
       setClientsInWork(updatedClientsInWork);
       setNewClients(updatedNewClients);
     } catch (error) {
-      console.error('Error unassigning client from trainer:', error);
     }
   };
 
@@ -275,12 +244,6 @@ export default function AdminPage() {
           <Group justify="space-between" mb="xl">
             <Title order={1}>Панель управления тренера</Title>
             <Group>
-              <Button component={Link} href="/admin/nutrition" variant="outline">
-                Питание
-              </Button>
-              <Button component={Link} href="/trainer/workout" variant="outline">
-                Тренировки
-              </Button>
             </Group>
           </Group>
 
@@ -526,7 +489,6 @@ export default function AdminPage() {
 
             <Grid.Col span={{ base: 12, md: 8 }}>
               <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl" mb="xl">
-                {/* Клиенты в работе */}
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Title order={3} mb="md">Клиенты в работе</Title>
                   {clientsInWork.map(client => (
@@ -567,7 +529,6 @@ export default function AdminPage() {
                   ))}
                 </Card>
 
-                {/* Новые клиенты */}
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Title order={3} mb="md">Новые клиенты</Title>
                   {newClients.map(client => (
@@ -609,7 +570,6 @@ export default function AdminPage() {
                 </Card>
               </SimpleGrid>
 
-              {/* Чат с клиентами */}
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Title order={3} mb="md">Чат с клиентами</Title>
                 {chatClients.length > 0 ? (

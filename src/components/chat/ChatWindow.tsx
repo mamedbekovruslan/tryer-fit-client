@@ -63,21 +63,18 @@ export function ChatWindow({
     },
   });
 
-  // Отслеживаем смену собеседника
   useEffect(() => {
     if (currentOtherUserIdRef.current !== otherUserId) {
       currentOtherUserIdRef.current = otherUserId;
     }
   }, [otherUserId]);
 
-  // Загрузка истории переписки
   useEffect(() => {
     if (otherUserId) {
       void loadConversation(otherUserId, currentUserId);
     }
   }, [currentUserId, loadConversation, otherUserId]);
 
-  // Отправка сообщения
   const handleSendMessage = useCallback(
     (message: string) => {
       sendMessage(otherUserId, currentUserType, message);
@@ -85,7 +82,6 @@ export function ChatWindow({
     [sendMessage, otherUserId, currentUserType]
   );
 
-  // Отправка статуса набора текста
   const handleTyping = useCallback(() => {
     sendTypingStatus(otherUserId, true);
 

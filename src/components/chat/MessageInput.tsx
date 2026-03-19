@@ -24,7 +24,6 @@ export function MessageInput({ onSendMessage, onTyping, disabled }: MessageInput
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
     
-    // Отправляем событие набора текста не чаще чем раз в 500мс
     const now = Date.now();
     if (onTyping && now - lastTypingTime > 500) {
       onTyping();

@@ -61,7 +61,6 @@ export default function MealDetailsPage() {
         color: 'green',
       });
 
-      // Возвращаемся к странице дня питания
       router.back();
     } catch (error) {
       notifications.show({

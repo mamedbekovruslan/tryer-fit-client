@@ -22,7 +22,6 @@ export function MessageList({
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Автопрокрутка к последнему сообщению
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -92,7 +91,6 @@ export function MessageList({
                 <Text
                   size="xs"
                   style={{
-                    // color: isOwnMessage ? 'rgba(255,255,255,0.7)' : 'var(--mantine-color-dimmed)',
                     marginTop: '4px',
                   }}
                 >

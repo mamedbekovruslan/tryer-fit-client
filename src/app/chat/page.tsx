@@ -39,7 +39,6 @@ export default function ChatPage() {
     return firstPhoto && firstPhoto.trim() ? firstPhoto : null;
   };
 
-  // Обновление selectedClientId при изменении query параметра
   useEffect(() => {
     if (isInitializing) {
       return;
@@ -58,7 +57,6 @@ export default function ChatPage() {
     }
   }, [clientIdFromQuery, setSelectedClientId]);
 
-  // Загрузка списка клиентов (для тренера)
   useEffect(() => {
     if (!currentUser || currentUser.user_type !== 'trainer') {
       return;
@@ -68,27 +66,23 @@ export default function ChatPage() {
       try {
         const data = await loadChats();
 
-        // Если клиент не выбран, но есть клиенты в списке, выбираем первого
         if (!selectedClientId && data.length > 0) {
           const firstClientId = data[0].userId;
           setSelectedClientId(firstClientId);
           router.push(`/chat?clientId=${firstClientId}`);
         }
       } catch (error) {
-        console.error('[ChatPage] Error loading clients:', error);
       }
     };
 
     void loadClients();
   }, [currentUser, loadChats, router, selectedClientId, setSelectedClientId]);
 
-  // Находим информацию о выбранном клиенте
   const selectedClient = useMemo(
     () => clients.find((c) => c.userId === selectedClientId),
     [clients, selectedClientId]
   );
 
-  // Показываем загрузку пока не определили пользователя
   if (isInitializing || !currentUser) {
     return (
       <Center style={{ height: '100vh' }}>
@@ -96,7 +90,6 @@ export default function ChatPage() {
       </Center>
     );
   }
-  // Если пользователь - клиент, показываем только чат с его тренером
   if (currentUser.user_type === 'client') {
     if (!currentUser.trainer) {
       return (
@@ -130,7 +123,6 @@ export default function ChatPage() {
     );
   }
 
-  // Если пользователь - тренер
   if (isClientsLoading) {
     return (
       <Center style={{ height: '100vh' }}>
@@ -142,7 +134,6 @@ export default function ChatPage() {
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)', padding: '16px' }}>
       <Box style={{ display: 'flex', flex: 1, overflow: 'hidden', padding: '32px' }}>
-        {/* Сайдбар со списком клиентов */}
         <Box
           style={{
             width: '320px',
@@ -159,7 +150,6 @@ export default function ChatPage() {
           <ClientList clients={clients} />
         </Box>
 
-        {/* Окно чата */}
         <Box style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {selectedClientId && selectedClient ? (
             <ChatWindow

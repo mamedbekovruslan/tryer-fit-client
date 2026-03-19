@@ -59,7 +59,6 @@ export default function TrainerInfoCard({ trainer }: TrainerInfoCardProps) {
   return (
     <Card shadow="sm" padding="lg" radius="md" withBorder>
       <Group wrap="nowrap" align="flex-start">
-        {/* Фотография тренера */}
         <Box flex={0}>
           <Avatar
             src={!imageError ? trainerPhotoSrc : undefined}
@@ -75,7 +74,6 @@ export default function TrainerInfoCard({ trainer }: TrainerInfoCardProps) {
           </Avatar>
         </Box>
 
-        {/* Информация о тренере */}
         <Stack gap="xs" flex={1}>
           <Text size="lg" fw={700}>
             Ваш тренер: {trainer.first_name} {trainer.last_name} {trainer.middle_name || ''}

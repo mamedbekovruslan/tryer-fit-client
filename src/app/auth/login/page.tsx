@@ -8,7 +8,6 @@ import { default as RegisterForm } from '@/features/auth/ui/RegisterForm/Registe
 export default function LoginPage() {
   const [isLoginView, setIsLoginView] = useState(true);
 
-  // Убедимся, что отображается форма логина
   useEffect(() => {
     setIsLoginView(true);
   }, []);

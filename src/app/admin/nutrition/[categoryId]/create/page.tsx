@@ -23,7 +23,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiPlus, FiTrash } from 'react-icons/fi';
 
-// Типы данных
 interface Meal {
   id: number;
   name: string;
@@ -97,27 +96,21 @@ export default function CreateNutritionDayPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Валидация
     if (!dayData.name.trim()) {
       setError('Название дня обязательно');
       return;
     }
     
-    // Проверяем, что все приемы пищи имеют названия и описания
     const emptyMeals = meals.filter(meal => !meal.name.trim() || !meal.description.trim());
     if (emptyMeals.length > 0) {
       setError('Все приемы пищи должны иметь название и описание');
       return;
     }
     
-    // Здесь будет вызов API для сохранения дня питания
-    console.log('Сохраняем день питания:', { ...dayData, meals });
     
-    // Имитация успешного сохранения
     setSuccess(true);
     setError('');
     
-    // Через 2 секунды перенаправляем обратно к категории
     setTimeout(() => {
       router.push(`/admin/nutrition/${categoryId}`);
     }, 2000);

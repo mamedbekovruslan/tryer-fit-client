@@ -57,23 +57,18 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     try {
-      // Отправляем обновленные данные на бэкенд
       await clientService.updateProfile(formData);
 
-      // Обновляем профиль пользователя
       await refreshUserProfile();
 
-      // Показываем уведомление об успешном сохранении
       setNotification({
         visible: true,
         message: 'Профиль успешно обновлен!',
         color: 'green'
       });
 
-      // Выходим из режима редактирования
       setIsEditing(false);
     } catch (error) {
-      console.error('Ошибка при сохранении профиля:', error);
       setNotification({
         visible: true,
         message: 'Ошибка при сохранении профиля. Попробуйте еще раз.',
@@ -81,15 +76,12 @@ export default function ProfilePage() {
       });
     }
 
-    // Скрываем уведомление через 3 секунды
     setTimeout(() => {
       setNotification(prev => ({ ...prev, visible: false }));
     }, 3000);
   };
 
   useEffect(() => {
-    // Refresh user profile when the page loads if user is absent
-    // or if we only have short auth payload without profile fields.
     const loadProfile = async () => {
       if (!user || (user.user_type === 'client' && user.photo_urls === undefined)) {
         await refreshUserProfile();
@@ -367,7 +359,6 @@ export default function ProfilePage() {
                           <Text fw={500}>{user.training_experience || 'Не указан'}</Text>
                         </div>
 
-                        {/* Дополнительные поля профиля */}
                         {user.waist_circumference !== undefined && (
                           <div>
                             <Text size="sm" c="dimmed">Обхват талии</Text>
@@ -435,7 +426,6 @@ export default function ProfilePage() {
                     {!isEditing ? (
                       <Button
                         onClick={() => {
-                          // При переходе в режим редактирования обновляем formData текущими данными
                           setFormData({
                             first_name: user?.first_name || '',
                             last_name: user?.last_name || '',

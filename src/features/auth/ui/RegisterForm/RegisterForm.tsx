@@ -13,9 +13,7 @@ interface RegisterFormProps {
   onSwitchToLogin: () => void;
 }
 
-// Тип для адаптированных полей, совместимых с компонентами (number | '')
 interface AdaptedCommonFields {
-  // Значения
   lastName: string;
   firstName: string;
   middleName: string;
@@ -28,14 +26,12 @@ interface AdaptedCommonFields {
   phone: string;
   birthDate: DateValue | null;
 
-  // Поля тренера
   education: string;
   institution: string;
   degree: string;
   specialization: string;
   certificateNumber: string;
 
-  // Поля профиля клиента
   waistCircumference: number | '';
   chestCircumference: number | '';
   hipCircumference: number | '';
@@ -50,7 +46,6 @@ interface AdaptedCommonFields {
   currentDiet: string;
   photoUrls: string[];
 
-  // Обработчики
   setLastName: (value: string) => void;
   setFirstName: (value: string) => void;
   setMiddleName: (value: string) => void;
@@ -63,14 +58,12 @@ interface AdaptedCommonFields {
   setPhone: (value: string) => void;
   setBirthDate: (value: DateValue | null) => void;
 
-  // Обработчики полей тренера
   setEducation: (value: string) => void;
   setInstitution: (value: string) => void;
   setDegree: (value: string) => void;
   setSpecialization: (value: string) => void;
   setCertificateNumber: (value: string) => void;
 
-  // Обработчики полей профиля клиента
   setWaistCircumference: (value: number | '') => void;
   setChestCircumference: (value: number | '') => void;
   setHipCircumference: (value: number | '') => void;
@@ -96,9 +89,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     await handleFormSubmit(e, formState, userType);
   };
 
-  // Адаптер для конвертации типов между хуком (string | number) и компонентами (number | '')
   const adaptedCommonFields: AdaptedCommonFields = {
-    // Значения
     lastName: formState.lastName,
     firstName: formState.firstName,
     middleName: formState.middleName,
@@ -129,7 +120,6 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     currentDiet: formState.currentDiet,
     photoUrls: formState.photoUrls,
 
-    // Обработчики
     setLastName: formState.setLastName,
     setFirstName: formState.setFirstName,
     setMiddleName: formState.setMiddleName,

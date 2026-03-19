@@ -47,7 +47,6 @@ export default function NutritionPlanManager() {
   const loadPlans = async () => {
     try {
       setLoading(true);
-      // Загружаем все планы (в реальном приложении можно фильтровать по категории)
       const data = await nutritionService.getAllNutritionPlans();
       setPlans(data);
     } catch (error) {
@@ -240,7 +239,6 @@ export default function NutritionPlanManager() {
         ) : null}
       </Paper>
 
-      {/* Модальное окно для добавления/редактирования плана */}
       <Modal
         opened={opened}
         onClose={() => {

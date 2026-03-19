@@ -6,22 +6,7 @@ import { Container, Title, Text, Paper, Button, Group, NumberInput, Alert, Image
 import { DatePickerInput } from '@mantine/dates';
 import { progressReportService } from '@/services/progressReportService';
 
-// Используем типы из сервиса
-// interface ProgressReport {
-//   date: Date | null;
-//   weight: number | '';
-//   waist: number | '';
-//   hips: number | '';
-//   chest: number | '';
-//   arms: number | '';
-//   thighs: number | '';
-//   bodyFat: number | '';
-//   muscleMass: number | '';
-//   photos: File[];
-//   notes: string;
-// }
 
-// Тип для локального состояния формы
 interface LocalProgressReport {
   date: Date | null;
   weight: number | '';
@@ -77,7 +62,6 @@ export default function NewProgressReportPage() {
       [field]: value
     }));
 
-    // Очистить ошибку при изменении поля
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -164,7 +148,6 @@ export default function NewProgressReportPage() {
         reportData.photos.map((photo) => fileToDataUrl(photo))
       );
 
-      // Подготовка данных для отправки
       const progressReportData = {
         date: reportData.date!,
         weight: typeof reportData.weight === 'number' ? reportData.weight : undefined,
@@ -179,12 +162,10 @@ export default function NewProgressReportPage() {
         photoUrls: uploadedPhotoUrls,
       };
 
-      // Отправка данных на сервер
       await progressReportService.createProgressReport(progressReportData);
 
       setSuccess(true);
 
-      // Сброс формы после успешной отправки
       setReportData({
         date: new Date(),
         weight: '',
@@ -199,8 +180,6 @@ export default function NewProgressReportPage() {
         notes: ''
       });
     } catch (error) {
-      console.error('Ошибка при отправке данных:', error);
-      // Обработка ошибки - можно добавить более подробную обработку
       alert('Ошибка при сохранении отчета. Попробуйте еще раз.');
     } finally {
       setUploading(false);

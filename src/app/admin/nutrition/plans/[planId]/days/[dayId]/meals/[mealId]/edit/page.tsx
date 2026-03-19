@@ -32,7 +32,6 @@ export default function EditMealPage() {
   const [meal, setMeal] = useState<Meal | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Форма для редактирования приема пищи
   const mealForm = useForm({
     initialValues: {
       name: '',
@@ -82,7 +81,6 @@ export default function EditMealPage() {
         color: 'green',
       });
 
-      // Возвращаемся к странице дня питания
       router.back();
     } catch (error) {
       notifications.show({

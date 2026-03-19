@@ -44,7 +44,6 @@ export default function NutritionDayDetailPage() {
   const [editMealModalOpened, setEditMealModalOpened] = useState(false);
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
 
-  // Форма для добавления приема пищи
   const mealForm = useForm({
     initialValues: {
       name: '',
@@ -118,7 +117,6 @@ export default function NutritionDayDetailPage() {
         color: 'green',
       });
 
-      // Обновляем список приемов пищи
       loadMeals();
 
       setAddMealModalOpened(false);
@@ -153,7 +151,6 @@ export default function NutritionDayDetailPage() {
         color: 'green',
       });
 
-      // Обновляем список приемов пищи
       loadMeals();
 
       setEditMealModalOpened(false);
@@ -177,7 +174,6 @@ export default function NutritionDayDetailPage() {
         color: 'green',
       });
 
-      // Обновляем список приемов пищи
       loadMeals();
     } catch (error) {
       notifications.show({
@@ -326,7 +322,6 @@ export default function NutritionDayDetailPage() {
           ) : null}
         </Paper>
 
-        {/* Модальное окно для добавления приема пищи */}
         <Modal
           opened={addMealModalOpened}
           onClose={() => setAddMealModalOpened(false)}
@@ -362,7 +357,6 @@ export default function NutritionDayDetailPage() {
           </form>
         </Modal>
 
-        {/* Модальное окно для редактирования приема пищи */}
         <Modal
           opened={editMealModalOpened}
           onClose={() => {

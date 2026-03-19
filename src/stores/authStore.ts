@@ -51,9 +51,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     useChatStore.getState().clear();
     useTrainerWorkoutStore.getState().clear();
     set({ user: null, isAuthenticated: false });
-    void authService.logout().catch((error) => {
-      console.error('Failed to clear auth cookie:', error);
-    });
+    void authService.logout().catch(() => {});
   },
 
   checkAuthStatus: () => Boolean(get().user),
@@ -89,11 +87,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
           };
           set({ user: authUser, isAuthenticated: true });
           return;
-        } catch (clientError) {
-          console.error(
-            'Could not fetch client profile with trainer:',
-            clientError,
-          );
+        } catch {
           const authUser: AuthUser = {
             id: userProfile.id,
             email: userProfile.email,
@@ -117,8 +111,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
           photo_urls: trainerProfile.photo_urls,
         };
         set({ user: authUser, isAuthenticated: true });
-      } catch (trainerError) {
-        console.error('Could not fetch trainer profile:', trainerError);
+      } catch {
         const authUser: AuthUser = {
           id: userProfile.id,
           email: userProfile.email,
@@ -128,17 +121,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
         set({ user: authUser, isAuthenticated: true });
       }
     } catch (error: unknown) {
-      const status =
-        typeof error === 'object' &&
-        error !== null &&
-        'response' in error &&
-        typeof (error as { response?: unknown }).response === 'object' &&
-        (error as { response?: { status?: number } }).response?.status;
-
       set({ user: null, isAuthenticated: false });
-      if (status && status !== 401) {
-        console.error('Failed to refresh user profile:', error);
-      }
     }
   },
 

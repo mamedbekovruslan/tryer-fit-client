@@ -93,7 +93,6 @@ export default function NutritionDayViewer() {
   };
 
   const handleDayClick = (day: NutritionDay) => {
-    // Перенаправляем на страницу просмотра конкретного дня
     router.push(`/admin/nutrition/${categoryId}/day/${day.id}`);
   };
 
@@ -159,7 +158,6 @@ export default function NutritionDayViewer() {
         ) : null}
       </Paper>
 
-      {/* Модальное окно для добавления нового дня */}
       <Modal
         opened={opened}
         onClose={() => {

@@ -23,9 +23,6 @@ export interface ChatUser {
 }
 
 export const chatService = {
-  /**
-   * Получить историю переписки с пользователем
-   */
   getConversation: async (userId: number, limit?: number, offset?: number): Promise<ChatMessage[]> => {
     try {
       const params = new URLSearchParams();
@@ -36,14 +33,10 @@ export const chatService = {
       const response = await apiClient.get<ChatMessage[]>(url);
       return response.data;
     } catch (error) {
-      console.error('[chatService] Error fetching conversation:', error);
       throw error;
     }
   },
 
-  /**
-   * Получить все чаты пользователя
-   */
   getUserChats: async (): Promise<ChatUser[]> => {
     try {
       const response = await apiClient.get<ChatUser[]>('/chat/chats');
@@ -52,14 +45,10 @@ export const chatService = {
           normalizeChatUser(user as unknown as Record<string, unknown>) as unknown as ChatUser,
       );
     } catch (error) {
-      console.error('[chatService] Error fetching user chats:', error);
       throw error;
     }
   },
 
-  /**
-   * Отправить сообщение (REST API)
-   */
   sendMessage: async (
     receiverId: number,
     senderType: 'client' | 'trainer',
@@ -73,26 +62,18 @@ export const chatService = {
       });
       return response.data;
     } catch (error) {
-      console.error('[chatService] Error sending message:', error);
       throw error;
     }
   },
 
-  /**
-   * Отметить сообщения как прочитанные
-   */
   markMessagesAsRead: async (senderId: number): Promise<void> => {
     try {
       await apiClient.patch(`/chat/messages/${senderId}/read`);
     } catch (error) {
-      console.error('[chatService] Error marking messages as read:', error);
       throw error;
     }
   },
 
-  /**
-   * Получить непрочитанные сообщения
-   */
   getUnreadMessages: async (senderId: number): Promise<ChatMessage[]> => {
     try {
       const response = await apiClient.get<ChatMessage[]>(
@@ -100,7 +81,6 @@ export const chatService = {
       );
       return response.data;
     } catch (error) {
-      console.error('[chatService] Error fetching unread messages:', error);
       throw error;
     }
   },

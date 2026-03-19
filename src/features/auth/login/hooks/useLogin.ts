@@ -20,16 +20,13 @@ export const useLogin = (): LoginHandler => {
     try {
       const response = await authService.login({ email, password });
 
-      // Use the auth context to store the token and user data
       login(response.access_token, response.user);
       await refreshUserProfile();
 
-      // Call the success callback if provided, passing the user data
       if (onSuccess) {
         onSuccess(response.user);
       }
     } catch (err: any) {
-      console.error('Login error:', err);
       if (err.response?.status === 401) {
         setError('Неверные учетные данные. Пожалуйста, проверьте email и пароль.');
       } else {

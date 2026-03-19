@@ -11,7 +11,6 @@ export interface AuthUser {
   email: string;
   username: string;
   user_type: 'client' | 'trainer';
-  // Поля профиля клиента
   first_name?: string;
   last_name?: string;
   waist_circumference?: number;
@@ -44,7 +43,6 @@ export const authService = {
         user: normalizeAuthUser(response.data.user) as AuthUser,
       };
     } catch (error) {
-      console.error('Login error:', error);
       throw error;
     }
   },
@@ -53,7 +51,6 @@ export const authService = {
     try {
       await apiClient.post('/auth/logout');
     } catch (error) {
-      console.error('Logout error:', error);
       throw error;
     }
   },

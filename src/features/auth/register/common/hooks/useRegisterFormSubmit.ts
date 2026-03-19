@@ -31,13 +31,11 @@ export const useRegisterFormSubmit = (): RegisterFormSubmitHandler => {
       weight,
       phone,
       birthDate,
-      // Поля тренера
       education,
       institution,
       degree,
       specialization,
       certificateNumber,
-      // Поля профиля клиента
       waistCircumference,
       chestCircumference,
       hipCircumference,
@@ -53,7 +51,6 @@ export const useRegisterFormSubmit = (): RegisterFormSubmitHandler => {
       photoUrls
     } = values;
 
-    // Basic validation
     if (password !== confirmPassword) {
       setError('Пароли не совпадают');
       return;
@@ -68,18 +65,15 @@ export const useRegisterFormSubmit = (): RegisterFormSubmitHandler => {
     setError(null);
 
     try {
-      // Create username from email or first and last name
       const username = email.split('@')[0]; // Using part of email as username
 
       if (userType === 'client') {
-        // Client registration
         await clientService.register({
           username,
           email,
           password,
           first_name: firstName,
           last_name: lastName,
-          // Добавляем данные профиля клиента
           waist_circumference: waistCircumference ? (typeof waistCircumference === 'string' ? Number(waistCircumference) : Number(waistCircumference)) : undefined,
           chest_circumference: chestCircumference ? (typeof chestCircumference === 'string' ? Number(chestCircumference) : Number(chestCircumference)) : undefined,
           hip_circumference: hipCircumference ? (typeof hipCircumference === 'string' ? Number(hipCircumference) : Number(hipCircumference)) : undefined,
@@ -95,7 +89,6 @@ export const useRegisterFormSubmit = (): RegisterFormSubmitHandler => {
           photo_urls: photoUrls,
         });
       } else {
-        // Trainer registration
         await trainerService.register({
           username,
           email,
@@ -108,7 +101,6 @@ export const useRegisterFormSubmit = (): RegisterFormSubmitHandler => {
           weight: weight ? (typeof weight === 'string' ? Number(weight) : weight) : undefined,
           phone,
           birth_date: birthDate ? new Date(birthDate).toISOString().split('T')[0] : undefined, // Format as YYYY-MM-DD
-          // Данные профиля тренера
           education,
           institution,
           degree,
@@ -118,20 +110,17 @@ export const useRegisterFormSubmit = (): RegisterFormSubmitHandler => {
         });
       }
 
-      // После успешной регистрации, сразу выполняем вход
       const loginResponse = await authService.login({ email, password });
 
       login(loginResponse.access_token, loginResponse.user);
       await refreshUserProfile();
 
-      // Перенаправляем в зависимости от типа пользователя
       if (loginResponse.user.user_type === 'trainer') {
         window.location.href = '/admin';
       } else {
         window.location.href = '/home';
       }
     } catch (err) {
-      console.error('Registration error:', err);
       setError('Ошибка регистрации. Пожалуйста, проверьте введенные данные и попробуйте снова.');
     } finally {
       setLoading(false);

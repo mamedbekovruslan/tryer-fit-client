@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  ClientWorkoutProgram,
   Exercise,
   WorkoutCategory,
   WorkoutDay,
@@ -12,6 +13,7 @@ const {
   getWorkoutProgramByIdMock,
   getWorkoutDaysByProgramMock,
   getExercisesByDayMock,
+  getClientWorkoutProgramsMock,
   getMyTrainerProfileMock,
   getClientsByTrainerIdMock,
 } = vi.hoisted(() => ({
@@ -20,6 +22,7 @@ const {
   getWorkoutProgramByIdMock: vi.fn(),
   getWorkoutDaysByProgramMock: vi.fn(),
   getExercisesByDayMock: vi.fn(),
+  getClientWorkoutProgramsMock: vi.fn(),
   getMyTrainerProfileMock: vi.fn(),
   getClientsByTrainerIdMock: vi.fn(),
 }));
@@ -31,6 +34,7 @@ vi.mock('@/services/workoutService', () => ({
     getWorkoutProgramById: getWorkoutProgramByIdMock,
     getWorkoutDaysByProgram: getWorkoutDaysByProgramMock,
     getExercisesByDay: getExercisesByDayMock,
+    getClientWorkoutPrograms: getClientWorkoutProgramsMock,
   },
 }));
 
@@ -63,6 +67,18 @@ describe('trainerWorkoutStore', () => {
         email: 'client_1@test.dev',
       },
     ];
+    const clientPrograms: ClientWorkoutProgram[] = [
+      createClientWorkoutProgram({
+        id: 501,
+        client: {
+          id: 100,
+          username: 'client_1',
+          email: 'client_1@test.dev',
+        },
+        workoutProgram: programs[0],
+        isActive: true,
+      }),
+    ];
 
     getWorkoutCategoriesMock.mockResolvedValue(categories);
     getAllWorkoutProgramsMock.mockResolvedValue(programs);
@@ -72,6 +88,7 @@ describe('trainerWorkoutStore', () => {
       email: 'trainer@test.dev',
     });
     getClientsByTrainerIdMock.mockResolvedValue(clients);
+    getClientWorkoutProgramsMock.mockResolvedValue(clientPrograms);
 
     await useTrainerWorkoutStore.getState().loadTrainerWorkspace(5);
 
@@ -79,11 +96,15 @@ describe('trainerWorkoutStore', () => {
     expect(getAllWorkoutProgramsMock).toHaveBeenCalledTimes(1);
     expect(getMyTrainerProfileMock).toHaveBeenCalledTimes(1);
     expect(getClientsByTrainerIdMock).toHaveBeenCalledWith(77);
+    expect(getClientWorkoutProgramsMock).toHaveBeenCalledWith(100);
     expect(useTrainerWorkoutStore.getState()).toMatchObject({
       loading: false,
       categories,
       programs,
       clients,
+      activeProgramsByClientId: {
+        100: clientPrograms,
+      },
       trainerId: 77,
     });
   });
@@ -148,6 +169,9 @@ describe('trainerWorkoutStore', () => {
         categories: [createCategory({ id: 1 })],
         programs: [createProgram({ id: 10 })],
         clients: [{ id: 100, username: 'client', email: 'client@test.dev' }],
+        activeProgramsByClientId: {
+          100: [createClientWorkoutProgram()],
+        },
         trainerId: 55,
         program: createProgram({ id: 11, name: 'Temp Program' }),
         days: [createDay({ id: 1 })],
@@ -163,6 +187,9 @@ describe('trainerWorkoutStore', () => {
       exercisesByDay: {},
       categories: [{ id: 1 }],
       programs: [{ id: 10 }],
+      activeProgramsByClientId: {
+        100: [expect.objectContaining({ id: 1 })],
+      },
     });
 
     useTrainerWorkoutStore.getState().clear();
@@ -171,11 +198,12 @@ describe('trainerWorkoutStore', () => {
       categories: [],
       programs: [],
       clients: [],
+      activeProgramsByClientId: {},
       trainerId: null,
       program: null,
       days: [],
       exercisesByDay: {},
-      activeTab: 'programs',
+      activeTab: 'categories',
     });
   });
 });
@@ -235,6 +263,24 @@ function createExercise(
     exerciseOrder: 1,
     workoutDayId: undefined,
     createdAt: new Date('2026-03-18T10:00:00.000Z'),
+    updatedAt: new Date('2026-03-18T10:00:00.000Z'),
+    ...overrides,
+  };
+}
+
+function createClientWorkoutProgram(
+  overrides: Partial<ClientWorkoutProgram> = {},
+): ClientWorkoutProgram {
+  return {
+    id: 1,
+    client: {
+      id: 100,
+      username: 'client',
+      email: 'client@test.dev',
+    },
+    workoutProgram: createProgram({ id: 10, name: 'Assigned Program' }),
+    isActive: true,
+    assignedAt: new Date('2026-03-18T10:00:00.000Z'),
     updatedAt: new Date('2026-03-18T10:00:00.000Z'),
     ...overrides,
   };

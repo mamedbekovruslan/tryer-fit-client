@@ -61,7 +61,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       <AppShell.Navbar p="md">
         <Text fw={500} mb="sm">Навигация</Text>
 
-        {/* Для тренеров показываем дополнительные пункты */}
         {user?.user_type === 'trainer' && (
           <>
             <Link href="/admin" passHref legacyBehavior>
@@ -70,7 +69,6 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
           </>
         )}
 
-        {/* Для клиентов показываем их пункты */}
         {user?.user_type === 'client' && (
           <>
             <Link href="/home" passHref legacyBehavior>

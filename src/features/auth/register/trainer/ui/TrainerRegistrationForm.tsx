@@ -306,7 +306,7 @@ export default function TrainerRegistrationForm({ commonFields }: TrainerRegistr
 
       <Dropzone
         onDrop={handlePhotoDrop}
-        onReject={(files) => console.log('Rejected files:', files)}
+        onReject={() => {}}
         maxSize={3 * 1024 ** 2}
         accept={['image/*']}
         mt="md"

@@ -37,6 +37,9 @@ export default function TrainerWorkoutPage() {
   const categories = useTrainerWorkoutStore((state) => state.categories);
   const programs = useTrainerWorkoutStore((state) => state.programs);
   const clients = useTrainerWorkoutStore((state) => state.clients);
+  const activeProgramsByClientId = useTrainerWorkoutStore(
+    (state) => state.activeProgramsByClientId,
+  );
   const activeTab = useTrainerWorkoutStore((state) => state.activeTab);
   const trainerId = useTrainerWorkoutStore((state) => state.trainerId);
   const setActiveTab = useTrainerWorkoutStore((state) => state.setActiveTab);
@@ -44,12 +47,10 @@ export default function TrainerWorkoutPage() {
     (state) => state.loadTrainerWorkspace,
   );
   
-  // Modal states
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [programModalOpen, setProgramModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   
-  // Form states
   const [editingCategory, setEditingCategory] = useState<WorkoutCategory | null>(null);
   const [editingProgram, setEditingProgram] = useState<WorkoutProgram | null>(null);
   const [selectedCategoryForProgram, setSelectedCategoryForProgram] = useState<number | null>(null);
@@ -81,7 +82,6 @@ export default function TrainerWorkoutPage() {
     }
   }, [activeTab, loadData, user]);
 
-  // Category handlers
   const handleCreateCategory = async () => {
     try {
       await workoutService.createWorkoutCategory(categoryForm);
@@ -149,7 +149,6 @@ export default function TrainerWorkoutPage() {
     setCategoryModalOpen(true);
   };
 
-  // Program handlers
   const handleCreateProgram = async () => {
     if (!selectedCategoryForProgram) {
       notifications.show({
@@ -230,7 +229,6 @@ export default function TrainerWorkoutPage() {
     setProgramModalOpen(true);
   };
 
-  // Assign program to client
   const handleAssignProgram = async () => {
     if (!selectedClientForAssign || !selectedProgramForAssign) {
       notifications.show({
@@ -271,6 +269,20 @@ export default function TrainerWorkoutPage() {
     return fullName ? `${fullName} (${client.username})` : client.username;
   };
 
+  const getAssignedProgramsLabel = (clientId: number) => {
+    const clientPrograms = activeProgramsByClientId[clientId] ?? [];
+    const activePrograms = clientPrograms.filter((program) => program.isActive);
+
+    if (activePrograms.length === 0) {
+      return null;
+    }
+
+    return activePrograms
+      .map((program) => program.workoutProgram.name)
+      .filter(Boolean)
+      .join(', ');
+  };
+
   return (
     <UserTypeProtectedRoute allowedUserTypes={['trainer']}>
       <Container size="xl" py="xl">
@@ -307,12 +319,11 @@ export default function TrainerWorkoutPage() {
 
           <Tabs value={activeTab} onChange={setActiveTab}>
             <Tabs.List>
-              <Tabs.Tab value="programs" leftSection={<FaDumbbell />}>Программы</Tabs.Tab>
               <Tabs.Tab value="categories" leftSection={<FaList />}>Категории</Tabs.Tab>
+              <Tabs.Tab value="programs" leftSection={<FaDumbbell />}>Программы</Tabs.Tab>
               <Tabs.Tab value="clients" leftSection={<FaUsers />}>Клиенты</Tabs.Tab>
             </Tabs.List>
 
-            {/* Programs Tab */}
             <Tabs.Panel value="programs" pt="xs">
               <Grid>
                 {programs.map((program) => (
@@ -361,7 +372,6 @@ export default function TrainerWorkoutPage() {
               </Grid>
             </Tabs.Panel>
 
-            {/* Categories Tab */}
             <Tabs.Panel value="categories" pt="xs">
               <Grid>
                 {categories.map((category) => (
@@ -410,7 +420,6 @@ export default function TrainerWorkoutPage() {
               </Grid>
             </Tabs.Panel>
 
-            {/* Clients Tab */}
             <Tabs.Panel value="clients" pt="xs">
               <Grid>
                 {clients.map((client) => (
@@ -434,6 +443,13 @@ export default function TrainerWorkoutPage() {
                             Цель: {client.fitness_goal}
                           </Text>
                         )}
+
+                        <Text size="sm">
+                          Программа:{' '}
+                          <Text span fw={500}>
+                            {getAssignedProgramsLabel(client.id) ?? 'Не назначена'}
+                          </Text>
+                        </Text>
 
                         <Group justify="space-between">
                           <Button
@@ -469,7 +485,6 @@ export default function TrainerWorkoutPage() {
           </Tabs>
         </Paper>
 
-        {/* Category Modal */}
         <Modal
           opened={categoryModalOpen}
           onClose={() => {
@@ -499,7 +514,6 @@ export default function TrainerWorkoutPage() {
           </Stack>
         </Modal>
 
-        {/* Program Modal */}
         <Modal
           opened={programModalOpen}
           onClose={() => {
@@ -538,7 +552,6 @@ export default function TrainerWorkoutPage() {
           </Stack>
         </Modal>
 
-        {/* Assign Modal */}
         <Modal
           opened={assignModalOpen}
           onClose={() => {

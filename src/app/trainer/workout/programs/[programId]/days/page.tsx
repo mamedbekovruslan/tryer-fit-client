@@ -41,7 +41,6 @@ export default function WorkoutProgramDaysPage() {
     (state) => state.loadProgramDetails,
   );
   
-  // Modal states
   const [dayModalOpen, setDayModalOpen] = useState(false);
   const [exerciseModalOpen, setExerciseModalOpen] = useState(false);
   const [editingDay, setEditingDay] = useState<WorkoutDay | null>(null);
@@ -71,7 +70,6 @@ export default function WorkoutProgramDaysPage() {
         router.push('/trainer/workout');
       }
     } catch {
-      console.error('Error loading data:', error);
     }
   }, [loadProgramDetails, programId, router]);
 
@@ -81,7 +79,6 @@ export default function WorkoutProgramDaysPage() {
     }
   }, [loadData, programId, user]);
 
-  // Day handlers
   const handleCreateDay = async () => {
     try {
       await workoutService.createWorkoutDay({
@@ -156,7 +153,6 @@ export default function WorkoutProgramDaysPage() {
     setDayModalOpen(true);
   };
 
-  // Exercise handlers
   const handleCreateExercise = async () => {
     if (!selectedDayForExercise) {
       notifications.show({
@@ -397,7 +393,6 @@ export default function WorkoutProgramDaysPage() {
           </Stack>
         </Paper>
 
-        {/* Day Modal */}
         <Modal
           opened={dayModalOpen}
           onClose={() => {
@@ -433,7 +428,6 @@ export default function WorkoutProgramDaysPage() {
           </Stack>
         </Modal>
 
-        {/* Exercise Modal */}
         <Modal
           opened={exerciseModalOpen}
           onClose={() => {

@@ -42,7 +42,6 @@ export default function NutritionCategoryPage() {
   const [editPlanModalOpened, setEditPlanModalOpened] = useState(false);
   const [editingPlan, setEditingPlan] = useState<NutritionPlan | null>(null);
 
-  // Форма для добавления/редактирования плана питания
   const planForm = useForm({
     initialValues: {
       name: '',
@@ -66,7 +65,6 @@ export default function NutritionCategoryPage() {
       const data = await nutritionService.getNutritionPlansByCategory(categoryId);
       setPlans(data);
 
-      // Устанавливаем первый план как выбранный по умолчанию
       if (data.length > 0) {
         setSelectedPlan(data[0]);
       }
@@ -107,10 +105,8 @@ export default function NutritionCategoryPage() {
         color: 'green',
       });
 
-      // Обновляем список планов
       loadPlans();
 
-      // Если удаляемый план был выбран, сбрасываем выбор
       if (selectedPlan && selectedPlan.id === planId) {
         setSelectedPlan(null);
       }
@@ -132,7 +128,6 @@ export default function NutritionCategoryPage() {
         color: 'green',
       });
 
-      // Обновляем список планов
       loadPlans();
 
       setAddPlanModalOpened(false);
@@ -167,7 +162,6 @@ export default function NutritionCategoryPage() {
         color: 'green',
       });
 
-      // Обновляем список планов
       loadPlans();
 
       setEditPlanModalOpened(false);
@@ -191,7 +185,6 @@ export default function NutritionCategoryPage() {
         color: 'green',
       });
 
-      // Обновляем список планов
       loadPlans();
     } catch (error) {
       notifications.show({
@@ -232,7 +225,6 @@ export default function NutritionCategoryPage() {
           </Flex>
 
           <Grid gutter="xl">
-            {/* Левая колонка - список планов */}
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Title order={3} mb="md">Планы питания</Title>
@@ -297,7 +289,6 @@ export default function NutritionCategoryPage() {
               </Card>
             </Grid.Col>
 
-            {/* Правая колонка - детали выбранного плана */}
             <Grid.Col span={{ base: 12, md: 8 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 {selectedPlan ? (
@@ -342,7 +333,6 @@ export default function NutritionCategoryPage() {
           </Grid>
         </Paper>
 
-        {/* Модальное окно для добавления плана питания */}
         <Modal
           opened={addPlanModalOpened}
           onClose={() => setAddPlanModalOpened(false)}
@@ -379,7 +369,6 @@ export default function NutritionCategoryPage() {
           </form>
         </Modal>
 
-        {/* Модальное окно для редактирования плана питания */}
         <Modal
           opened={editPlanModalOpened}
           onClose={() => {

@@ -21,7 +21,6 @@ import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// Типы данных
 interface NutritionDayPlan {
   id: number;
   day_name: string;
@@ -44,7 +43,6 @@ export default function NutritionDayPlansPage() {
   const [selectedPlan, setSelectedPlan] = useState<NutritionDayPlan | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Моковые данные для демонстрации
   const mockDayPlans: NutritionDayPlan[] = [
     {
       id: 1,
@@ -112,9 +110,7 @@ export default function NutritionDayPlansPage() {
   ];
 
   useEffect(() => {
-    // Загружаем данные планов питания
     const loadDayPlans = async () => {
-      // В реальной реализации здесь будет вызов API
       setDayPlans(mockDayPlans);
       setLoading(false);
     };
@@ -123,7 +119,6 @@ export default function NutritionDayPlansPage() {
   }, [categoryId, subcategoryId]);
 
   useEffect(() => {
-    // Когда выбираем план, устанавливаем его в состояние
     if (selectedPlanId) {
       const plan = dayPlans.find(plan => plan.id.toString() === selectedPlanId);
       setSelectedPlan(plan || null);

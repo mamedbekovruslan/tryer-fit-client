@@ -69,7 +69,6 @@ export default function EditReportPage() {
         const report = await progressReportService.getProgressReportById(reportId);
         setReportData(toEditableReport(report));
       } catch (err) {
-        console.error(err);
         setError('Не удалось загрузить отчет');
       } finally {
         setLoading(false);
@@ -120,7 +119,6 @@ export default function EditReportPage() {
       setSuccess(true);
       setTimeout(() => router.push(`/progress/${reportData.id}`), 800);
     } catch (err) {
-      console.error(err);
       setError('Не удалось сохранить изменения');
     } finally {
       setSaving(false);

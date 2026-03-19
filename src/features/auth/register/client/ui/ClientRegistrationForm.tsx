@@ -40,7 +40,6 @@ interface ClientRegistrationFormProps {
     setPhone: (value: string) => void;
     birthDate: DateValue | null;
     setBirthDate: (value: DateValue | null) => void;
-    // Поля профиля клиента
     waistCircumference: number | '';
     setWaistCircumference: (value: number | '') => void;
     chestCircumference: number | '';
@@ -290,7 +289,6 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
       <Divider my="sm" />
       <Title order={4} mt="md">Дополнительная информация</Title>
 
-      {/* Обхваты */}
       <MemoNumberInput
         label="Обхват талии (см)"
         placeholder="Введите значение"
@@ -346,7 +344,6 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
         mt="md"
       />
 
-      {/* Цель и ожидаемый результат */}
       <MemoSelect
         label="Цель тренировок"
         placeholder="Выберите цель"
@@ -371,7 +368,6 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
         mt="md"
       />
 
-      {/* Противопоказания и заболевания */}
       <MemoTextarea
         label="Противопоказания"
         placeholder="Укажите возможные противопоказания..."
@@ -399,7 +395,6 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
         mt="md"
       />
 
-      {/* Опыт и рацион */}
       <MemoTextarea
         label="Опыт тренировок"
         placeholder="Расскажите о вашем опыте тренировок..."
@@ -418,13 +413,12 @@ export default function ClientRegistrationForm({ commonFields }: ClientRegistrat
         mt="md"
       />
 
-      {/* Загрузка фото профиля */}
       <div>
         <Text size="sm" mb="xs" mt="md">Фото профиля</Text>
         <Dropzone
           onDrop={handlePhotoUpload}
-          onReject={(files) => console.log('rejected files', files)}
-          maxSize={3 * 1024 ** 2} // 3MB
+          onReject={() => {}}
+          maxSize={3 * 1024 ** 2}
           accept={IMAGE_MIME_TYPE}
         >
           <Group justify="center" gap="xl" mih={120}>

@@ -65,7 +65,6 @@ export default function AddNutritionDayPage() {
         color: 'green',
       });
 
-      // Перенаправляем обратно к списку дней в категории
       router.push(`/admin/nutrition/${categoryId}`);
     } catch (error) {
       notifications.show({

@@ -44,7 +44,6 @@ export default function NutritionPlanDaysPage() {
   const [editDayModalOpened, setEditDayModalOpened] = useState(false);
   const [editingDay, setEditingDay] = useState<NutritionDay | null>(null);
 
-  // Форма для добавления/редактирования дня питания
   const dayForm = useForm({
     initialValues: {
       name: '',
@@ -74,7 +73,6 @@ export default function NutritionPlanDaysPage() {
       const data = await nutritionService.getNutritionDaysByPlanForTrainer(planId);
       setDays(data);
 
-      // Устанавливаем первый день как выбранный по умолчанию
       if (data.length > 0) {
         setSelectedDay(data[0]);
       }
@@ -139,10 +137,8 @@ export default function NutritionPlanDaysPage() {
         color: 'green',
       });
 
-      // Обновляем список дней
       loadDays();
 
-      // Если удаляемый день был выбран, сбрасываем выбор
       if (selectedDay && selectedDay.id === dayId) {
         setSelectedDay(null);
         setMeals([]); // Очищаем список приемов пищи
@@ -165,7 +161,6 @@ export default function NutritionPlanDaysPage() {
         color: 'green',
       });
 
-      // Обновляем список дней
       loadDays();
 
       setAddDayModalOpened(false);
@@ -200,7 +195,6 @@ export default function NutritionPlanDaysPage() {
         color: 'green',
       });
 
-      // Обновляем список дней
       loadDays();
 
       setEditDayModalOpened(false);
@@ -228,7 +222,6 @@ export default function NutritionPlanDaysPage() {
         color: 'green',
       });
 
-      // Обновляем список приемов пищи
       if (selectedDay) {
         loadMealsForDay(selectedDay.id);
       }
@@ -271,7 +264,6 @@ export default function NutritionPlanDaysPage() {
           </Flex>
 
           <Grid gutter="xl">
-            {/* Левая колонка - список дней */}
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Title order={3} mb="md">Дни питания</Title>
@@ -336,7 +328,6 @@ export default function NutritionPlanDaysPage() {
               </Card>
             </Grid.Col>
 
-            {/* Правая колонка - детали выбранного дня */}
             <Grid.Col span={{ base: 12, md: 8 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 {selectedDay ? (
@@ -421,7 +412,6 @@ export default function NutritionPlanDaysPage() {
           </Grid>
         </Paper>
 
-        {/* Модальное окно для добавления дня питания */}
         <Modal
           opened={addDayModalOpened}
           onClose={() => setAddDayModalOpened(false)}
@@ -458,7 +448,6 @@ export default function NutritionPlanDaysPage() {
           </form>
         </Modal>
 
-        {/* Модальное окно для редактирования дня питания */}
         <Modal
           opened={editDayModalOpened}
           onClose={() => {

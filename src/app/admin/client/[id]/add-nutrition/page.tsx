@@ -27,20 +27,17 @@ export default function AddNutritionToClientPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // Состояния для данных
   const [nutritionCategories, setNutritionCategories] = useState<NutritionCategory[]>([]);
   const [nutritionPlans, setNutritionPlans] = useState<NutritionPlan[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
-  // Состояния для загрузки и ошибок
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingPlans, setLoadingPlans] = useState(false);
 
-  // Загрузка категорий питания при монтировании компонента
   useEffect(() => {
     if (user) {
       loadNutritionCategories();
@@ -50,7 +47,6 @@ export default function AddNutritionToClientPage() {
   const loadNutritionCategories = async () => {
     try {
       setLoadingCategories(true);
-      // Загружаем все категории питания
       const categories = await nutritionService.getNutritionCategories();
       setNutritionCategories(categories);
     } catch (err) {
@@ -63,7 +59,6 @@ export default function AddNutritionToClientPage() {
   const loadNutritionPlansByCategory = async (categoryId: number) => {
     try {
       setLoadingPlans(true);
-      // Загружаем планы питания по выбранной категории
       const plans = await nutritionService.getNutritionPlansByCategory(categoryId);
       setNutritionPlans(plans);
       setSelectedPlanId(null); // Сбрасываем выбранный план при смене категории
@@ -74,7 +69,6 @@ export default function AddNutritionToClientPage() {
     }
   };
 
-  // Обработка выбора категории
   const handleCategoryChange = (value: string | null) => {
     setSelectedCategoryId(value);
     if (value) {
@@ -85,12 +79,10 @@ export default function AddNutritionToClientPage() {
     }
   };
 
-  // Обработка выбора плана
   const handlePlanChange = (value: string | null) => {
     setSelectedPlanId(value);
   };
 
-  // Обработка публикации плана
   const handlePublishPlan = async () => {
     if (!selectedPlanId) {
       setError('Выберите план питания перед публикацией');
@@ -100,13 +92,11 @@ export default function AddNutritionToClientPage() {
     try {
       setLoading(true);
 
-      // Привязываем план питания к клиенту
       await nutritionService.assignNutritionPlanToClient(Number(clientId), Number(selectedPlanId));
 
       setSuccess(true);
       setError('');
 
-      // Через 2 секунды перенаправляем обратно
       setTimeout(() => {
         router.push(`/admin/client/${clientId}/nutrition`);
       }, 2000);
@@ -150,7 +140,6 @@ export default function AddNutritionToClientPage() {
           )}
 
           <Grid gutter="xl">
-            {/* Левая колонка - селекторы */}
             <Grid.Col span={{ base: 12, md: 6 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Stack gap="md">
@@ -199,7 +188,6 @@ export default function AddNutritionToClientPage() {
               </Card>
             </Grid.Col>
 
-            {/* Правая колонка - предпросмотр плана */}
             <Grid.Col span={{ base: 12, md: 6 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Stack gap="md">

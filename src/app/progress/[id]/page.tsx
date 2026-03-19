@@ -27,7 +27,6 @@ export default function ReportDetailPage() {
         setReport(data);
       } catch (err) {
         setError('Не удалось загрузить отчет');
-        console.error(err);
       } finally {
         setLoading(false);
       }

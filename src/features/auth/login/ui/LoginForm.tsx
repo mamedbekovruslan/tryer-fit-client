@@ -17,7 +17,6 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await handleLogin(email, password, (user) => {
-      // Перенаправление в зависимости от типа пользователя
       if (user.user_type === 'trainer') {
         window.location.href = '/admin';
       } else {

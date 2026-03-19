@@ -101,7 +101,6 @@ export default function ClientProfilePage() {
         );
       } catch (err) {
         setError('Ошибка загрузки данных клиента: ' + (err as Error).message);
-        console.error('Error loading client data:', err);
       } finally {
         setLoading(false);
       }
@@ -195,7 +194,6 @@ export default function ClientProfilePage() {
           )}
 
           <Grid gutter="xl">
-            {/* Информация о клиенте */}
             <Grid.Col span={{ base: 12, md: 4 }}>
               <Card shadow="sm" padding="lg" radius="md" withBorder>
                 <Stack gap="md">
@@ -267,10 +265,8 @@ export default function ClientProfilePage() {
               </Card>
             </Grid.Col>
 
-            {/* Отчеты и прогресс */}
             <Grid.Col span={{ base: 12, md: 8 }}>
               <Stack gap="xl">
-                {/* Последний отчет с фото */}
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Title order={3} mb="md">Последний отчет с фото</Title>
                   {latestReport ? (
@@ -303,7 +299,6 @@ export default function ClientProfilePage() {
                   )}
                 </Card>
 
-                {/* Прогресс в виде графика */}
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Flex justify="space-between" align="flex-start" mb="md">
                     <Title order={3}>Прогресс</Title>
@@ -393,14 +388,12 @@ export default function ClientProfilePage() {
                   </div>
                 </Card>
 
-                {/* Кнопка "Все отчеты" */}
                 <Flex justify="center">
                   <Button variant="outline" size="lg" component={Link} href="/progress">
                     Все отчеты
                   </Button>
                 </Flex>
 
-                {/* Комментарии к отчетам */}
                 <Card shadow="sm" padding="lg" radius="md" withBorder>
                   <Title order={3} mb="md">Комментарии к отчету</Title>
 
@@ -443,7 +436,6 @@ export default function ClientProfilePage() {
         </Paper>
       </Container>
 
-      {/* Модальное окно для добавления комментария */}
       <Modal
         opened={addCommentModalOpen}
         onClose={() => {

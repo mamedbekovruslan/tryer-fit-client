@@ -190,7 +190,6 @@ export default function NutritionCategoryViewer() {
         )}
       </Paper>
 
-      {/* Модальное окно для добавления новой категории */}
       <Modal
         opened={opened}
         onClose={() => {

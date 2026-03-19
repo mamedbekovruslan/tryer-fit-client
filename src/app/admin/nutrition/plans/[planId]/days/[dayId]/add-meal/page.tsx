@@ -30,7 +30,6 @@ export default function AddMealPage() {
   const dayId = Number(params.dayId);
   const [loading, setLoading] = useState(false);
 
-  // Форма для добавления приема пищи
   const mealForm = useForm({
     initialValues: {
       name: '',
@@ -44,7 +43,6 @@ export default function AddMealPage() {
   });
 
   useEffect(() => {
-    // Устанавливаем ID дня питания в форму
     mealForm.setFieldValue('nutritionDayId', dayId);
   }, [dayId]);
 
@@ -58,7 +56,6 @@ export default function AddMealPage() {
         color: 'green',
       });
 
-      // Возвращаемся к странице дня питания
       router.back();
     } catch (error) {
       notifications.show({

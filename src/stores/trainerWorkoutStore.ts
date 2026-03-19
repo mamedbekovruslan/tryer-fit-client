@@ -1,7 +1,14 @@
 'use client';
 
 import { create } from 'zustand';
-import { workoutService, type WorkoutCategory, type WorkoutProgram, type WorkoutDay, type Exercise } from '@/services/workoutService';
+import {
+  workoutService,
+  type ClientWorkoutProgram,
+  type Exercise,
+  type WorkoutCategory,
+  type WorkoutDay,
+  type WorkoutProgram,
+} from '@/services/workoutService';
 import { type Client } from '@/services/clientService';
 import { trainerService } from '@/services/trainerService';
 
@@ -10,6 +17,7 @@ interface TrainerWorkoutStoreState {
   categories: WorkoutCategory[];
   programs: WorkoutProgram[];
   clients: Client[];
+  activeProgramsByClientId: Record<number, ClientWorkoutProgram[]>;
   activeTab: string | null;
   trainerId: number | null;
   program: WorkoutProgram | null;
@@ -28,7 +36,8 @@ export const useTrainerWorkoutStore = create<TrainerWorkoutStoreState>(
     categories: [],
     programs: [],
     clients: [],
-    activeTab: 'programs',
+    activeProgramsByClientId: {},
+    activeTab: 'categories',
     trainerId: null,
     program: null,
     days: [],
@@ -50,11 +59,23 @@ export const useTrainerWorkoutStore = create<TrainerWorkoutStoreState>(
 
         const resolvedTrainerId = trainerProfile.id || get().trainerId || userId;
         const clients = await trainerService.getClientsByTrainerId(resolvedTrainerId);
+        const activeProgramsEntries = await Promise.all(
+          clients.map(async (client) => [
+            client.id,
+            await workoutService.getClientWorkoutPrograms(client.id),
+          ] as const),
+        );
+        const activeProgramsByClientId =
+          Object.fromEntries(activeProgramsEntries) as Record<
+            number,
+            ClientWorkoutProgram[]
+          >;
 
         set({
           categories,
           programs,
           clients,
+          activeProgramsByClientId,
           trainerId: resolvedTrainerId,
         });
       } finally {
@@ -101,7 +122,8 @@ export const useTrainerWorkoutStore = create<TrainerWorkoutStoreState>(
         categories: [],
         programs: [],
         clients: [],
-        activeTab: 'programs',
+        activeProgramsByClientId: {},
+        activeTab: 'categories',
         trainerId: null,
         program: null,
         days: [],

@@ -9,16 +9,12 @@ const apiClient = axios.create({
   },
 });
 
-// Интерсептор ответов для глобальной обработки ответов
 apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // Обработка глобальных ошибок ответов здесь
-    console.error('Ошибка API:', error);
 
-    // Проверяем, является ли ошибка связанной с аутентификацией (401 Unauthorized)
     if (error.response && error.response.status === 401) {
       window.dispatchEvent(new Event('auth:unauthorized'));
     }

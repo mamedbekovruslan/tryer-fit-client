@@ -14,14 +14,12 @@ export interface RegisterFormValues {
   phone: string;
   birthDate: DateValue | null;
 
-  // Поля тренера
   education: string;
   institution: string;
   degree: string;
   specialization: string;
   certificateNumber: string;
 
-  // Поля профиля клиента
   waistCircumference: number | '';
   chestCircumference: number | '';
   hipCircumference: number | '';
@@ -50,14 +48,12 @@ export interface RegisterFormHandlers {
   setPhone: (value: string) => void;
   setBirthDate: (value: DateValue | null) => void;
 
-  // Обработчики полей тренера
   setEducation: (value: string) => void;
   setInstitution: (value: string) => void;
   setDegree: (value: string) => void;
   setSpecialization: (value: string) => void;
   setCertificateNumber: (value: string) => void;
 
-  // Обработчики полей профиля клиента
   setWaistCircumference: (value: number | '') => void;
   setChestCircumference: (value: number | '') => void;
   setHipCircumference: (value: number | '') => void;
@@ -81,7 +77,6 @@ export interface RegisterFormState extends RegisterFormValues, RegisterFormHandl
 }
 
 export const useRegisterFormState = (): RegisterFormState => {
-  // Состояния для всех полей формы
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -94,14 +89,12 @@ export const useRegisterFormState = (): RegisterFormState => {
   const [phone, setPhone] = useState('');
   const [birthDate, setBirthDate] = useState<DateValue | null>(null);
 
-  // Состояния для полей тренера
   const [education, setEducation] = useState('');
   const [institution, setInstitution] = useState('');
   const [degree, setDegree] = useState('');
   const [specialization, setSpecialization] = useState('');
   const [certificateNumber, setCertificateNumber] = useState('');
 
-  // Состояния для профиля клиента
   const [waistCircumference, setWaistCircumference] = useState<number | ''>('');
   const [chestCircumference, setChestCircumference] = useState<number | ''>('');
   const [hipCircumference, setHipCircumference] = useState<number | ''>('');
@@ -116,12 +109,10 @@ export const useRegisterFormState = (): RegisterFormState => {
   const [currentDiet, setCurrentDiet] = useState<string>('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
-  // Состояния для обработки ошибок и загрузки
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   return {
-    // Значения
     lastName,
     firstName,
     middleName,
@@ -152,7 +143,6 @@ export const useRegisterFormState = (): RegisterFormState => {
     currentDiet,
     photoUrls,
 
-    // Обработчики
     setLastName,
     setFirstName,
     setMiddleName,
@@ -183,7 +173,6 @@ export const useRegisterFormState = (): RegisterFormState => {
     setCurrentDiet,
     setPhotoUrls,
 
-    // Состояния загрузки и ошибок
     loading,
     error,
     setLoading,

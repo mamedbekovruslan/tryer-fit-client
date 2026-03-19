@@ -1,7 +1,6 @@
 import apiClient from '@/lib/api';
 import { normalizeClient } from './modelAdapters';
 
-// Типы данных
 export interface Client {
   id: number;
   username: string;
@@ -10,7 +9,6 @@ export interface Client {
   last_name?: string;
   firstName?: string;
   lastName?: string;
-  // Поля профиля
   waist_circumference?: number;
   chest_circumference?: number;
   hip_circumference?: number;
@@ -35,7 +33,6 @@ export interface Client {
   currentDiet?: string;
   photoUrls?: string[];
   trainer?: any; // Тренер, связан с клиентом
-  // другие поля клиента
 }
 
 export type ClientResponse = Client;
@@ -112,34 +109,28 @@ export const clientService = {
       const response = await apiClient.post('/clients/register', clientData);
       return normalizeClient(response.data) as Client;
     } catch (error) {
-      console.error('Error registering client:', error);
       throw error;
     }
   },
 
-  // Получение профиля текущего клиента
   getMyProfile: async (): Promise<Client> => {
     try {
       const response = await apiClient.get('/clients/profile');
       return normalizeClient(response.data) as Client;
     } catch (error) {
-      console.error('Error fetching client profile:', error);
       throw error;
     }
   },
 
-  // Обновление профиля текущего клиента
   updateProfile: async (profileData: UpdateClientProfileRequest): Promise<Client> => {
     try {
       const response = await apiClient.put('/clients/profile', profileData);
       return normalizeClient(response.data) as Client;
     } catch (error) {
-      console.error('Error updating client profile:', error);
       throw error;
     }
   },
 
-  // Назначение плана питания клиенту
   assignNutritionPlan: async (clientId: number, planData: AssignNutritionPlanRequest): Promise<ClientNutritionPlan> => {
     try {
       const response = await apiClient.post('/client-nutrition-plans', {
@@ -149,29 +140,24 @@ export const clientService = {
       });
       return response.data;
     } catch (error) {
-      console.error(`Error assigning nutrition plan to client ${clientId}:`, error);
       throw error;
     }
   },
 
-  // Получение информации о клиенте по ID
   getClientById: async (clientId: number): Promise<Client> => {
     try {
       const response = await apiClient.get(`/clients/${clientId}`);
       return normalizeClient(response.data) as Client;
     } catch (error) {
-      console.error(`Error fetching client with ID ${clientId}:`, error);
       throw error;
     }
   },
 
-  // Получение назначенных планов питания для клиента
   getNutritionPlans: async (clientId: number): Promise<ClientNutritionPlan[]> => {
     try {
       const response = await apiClient.get(`/client-nutrition-plans/client/${clientId}`);
       return response.data;
     } catch (error) {
-      console.error(`Error fetching nutrition plans for client ${clientId}:`, error);
       throw error;
     }
   },

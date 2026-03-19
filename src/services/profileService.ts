@@ -21,7 +21,6 @@ export const profileService = {
       const response = await apiClient.get('/auth/profile');
       return normalizeAuthUser(response.data) as UserProfile;
     } catch (error) {
-      console.error('Get profile error:', error);
       throw error;
     }
   },
@@ -31,7 +30,6 @@ export const profileService = {
       const response = await apiClient.get(`/clients/${clientId}`);
       return normalizeClient(response.data) as ClientWithTrainer;
     } catch (error) {
-      console.error('Get client with trainer error:', error);
       throw error;
     }
   },

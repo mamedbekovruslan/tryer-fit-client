@@ -23,7 +23,6 @@ export default function AllReportsPage() {
         const data = await progressReportService.getAllProgressReports();
         setReports(data);
       } catch (error) {
-        console.error('Ошибка загрузки отчетов прогресса:', error);
         setReports([]);
       } finally {
         setLoading(false);
@@ -36,10 +35,8 @@ export default function AllReportsPage() {
   useEffect(() => {
     let result = [...reports];
 
-    // Сортировка: сперва новые
     result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Фильтрация по времени
     const now = new Date();
     switch (timeFilter) {
       case 'week':
@@ -69,7 +66,6 @@ export default function AllReportsPage() {
     setCurrentPage(1); // Сброс на первую страницу при изменении фильтров
   }, [reports, timeFilter, customDateRange]);
 
-  // Пагинация
   const indexOfLastReport = currentPage * reportsPerPage;
   const indexOfFirstReport = indexOfLastReport - reportsPerPage;
   const currentReports = filteredReports.slice(indexOfFirstReport, indexOfLastReport);

@@ -41,7 +41,6 @@ export default function ReportDetailPage() {
         const data = await progressReportService.getProgressReportById(reportId);
         setReport(data);
       } catch (err) {
-        console.error('Ошибка загрузки отчета:', err);
         setError('Не удалось загрузить отчет');
         setReport(null);
       } finally {
@@ -167,11 +166,6 @@ export default function ReportDetailPage() {
             </Group>
           </Card>
         )}
-
-        <Card shadow="sm" padding="lg" radius="md" withBorder mb="lg">
-          <Text fw={500} mb="sm">Комментарий пользователя</Text>
-          <Text>{report.notes || 'Комментарий отсутствует'}</Text>
-        </Card>
 
         <Card shadow="sm" padding="lg" radius="md" withBorder mb="lg">
           <Text fw={500} mb="sm">Комментарии тренера</Text>

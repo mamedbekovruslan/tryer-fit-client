@@ -14,7 +14,6 @@ interface UseChatSocketOptions {
   onConnected?: (data: { userId: number; userType: string }) => void;
 }
 
-// Используем ref для хранения колбэков, чтобы избежать пересоздания подключения
 export function useChatSocket(options: UseChatSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
   const optionsRef = useRef(options);
@@ -34,14 +33,12 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
       return;
     }
 
-    // Если подключение уже есть, не создаём новое
     if (socketRef.current) {
       return;
     }
 
     const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
-    // Создаем WebSocket подключение
     socketRef.current = io(`${baseURL}/chat`, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
@@ -84,7 +81,6 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
     });
 
     socketRef.current.on('error', (error) => {
-      console.error('[useChatSocket] WebSocket error:', error);
     });
 
     socketRef.current.on('disconnect', () => {
@@ -96,11 +92,9 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
     });
 
     socketRef.current.on('reconnect_error', (error) => {
-      console.error('[useChatSocket] Reconnect error:', error);
     });
 
     return () => {
-      // Не отключаем сокет при размонтировании, чтобы сохранить подключение при навигации.
     };
   }, [
     applyMessagesRead,
@@ -112,7 +106,6 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
     user?.id,
   ]);
 
-  // Отдельный эффект для очистки подключения при размонтировании всего приложения
   useEffect(() => {
     if (!isInitializing && !isAuthenticated && socketRef.current) {
       socketRef.current.disconnect();

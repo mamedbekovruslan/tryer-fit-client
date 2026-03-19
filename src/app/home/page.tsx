@@ -42,7 +42,6 @@ export default function HomePage() {
 
         setTrainerProfile(null);
       } catch (error) {
-        console.error('Не удалось загрузить профиль тренера для /home:', error);
         setTrainerProfile(user.trainer || null);
       }
     };
@@ -50,7 +49,6 @@ export default function HomePage() {
     loadTrainerProfile();
   }, [user]);
 
-  // Показываем защищенное содержимое только если пользователь аутентифицирован и является клиентом
   return (
     <UserTypeProtectedRoute allowedUserTypes={['client']}>
       <Container size="md" py="xl">
@@ -62,7 +60,6 @@ export default function HomePage() {
             Вы успешно вошли в систему как <strong>{user?.user_type}</strong>.
           </Text>
 
-          {/* Карточка информации о тренере */}
           <Stack gap="xl" mt="xl">
             <TrainerInfoCard trainer={trainerProfile || user?.trainer} />
           </Stack>

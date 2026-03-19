@@ -35,12 +35,10 @@ export default function WorkoutPage() {
     try {
       setLoading(true);
       if (user && user.id) {
-        // Загружаем активные программы клиента
         const programs = await workoutService.getActiveClientWorkoutPrograms(user.id);
         setClientWorkoutPrograms(programs);
       }
     } catch (error) {
-      console.error('Error loading workout programs:', error);
     } finally {
       setLoading(false);
     }
@@ -110,7 +108,6 @@ export default function WorkoutPage() {
   );
 }
 
-// Компонент для отображения деталей программы тренировок
 function WorkoutProgramDetails({ workoutProgram }: { workoutProgram: any }) {
   const [workoutDays, setWorkoutDays] = useState<WorkoutDay[]>([]);
   const [exercisesByDay, setExercisesByDay] = useState<{ [key: number]: Exercise[] }>({});
@@ -124,11 +121,9 @@ function WorkoutProgramDetails({ workoutProgram }: { workoutProgram: any }) {
     try {
       setLoading(true);
 
-      // Загружаем дни программы
       const days = await workoutService.getWorkoutDaysByProgram(workoutProgram.id);
       setWorkoutDays(days);
 
-      // Загружаем упражнения для каждого дня
       const exercisesData: { [key: number]: Exercise[] } = {};
       for (const day of days) {
         try {
@@ -139,7 +134,6 @@ function WorkoutProgramDetails({ workoutProgram }: { workoutProgram: any }) {
       }
       setExercisesByDay(exercisesData);
     } catch (error) {
-      console.error('Error loading program details:', error);
     } finally {
       setLoading(false);
     }
