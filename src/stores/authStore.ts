@@ -7,6 +7,10 @@ import { authService, type AuthUser } from '@/services/authService';
 import { profileService } from '@/services/profileService';
 import { useChatStore } from '@/stores/chatStore';
 import { useTrainerWorkoutStore } from '@/stores/trainerWorkoutStore';
+import {
+  clearStoredAuthToken,
+  setStoredAuthToken,
+} from '@/lib/authToken';
 
 interface AuthStoreState {
   user: AuthUser | null;
@@ -44,12 +48,14 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   },
 
   login: (_token, user) => {
+    setStoredAuthToken(_token);
     set({ user, isAuthenticated: true });
   },
 
   logout: () => {
     useChatStore.getState().clear();
     useTrainerWorkoutStore.getState().clear();
+    clearStoredAuthToken();
     set({ user: null, isAuthenticated: false });
     void authService.logout().catch(() => {});
   },
@@ -128,6 +134,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   clearUser: () => {
     useChatStore.getState().clear();
     useTrainerWorkoutStore.getState().clear();
+    clearStoredAuthToken();
     set({ user: null, isAuthenticated: false });
   },
 }));

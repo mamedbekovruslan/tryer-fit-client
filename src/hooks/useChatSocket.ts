@@ -5,6 +5,7 @@ import { io, Socket } from 'socket.io-client';
 import { ChatMessage } from '@/services/chatService';
 import { useAuth } from '@/providers/AuthProvider';
 import { useChatStore } from '@/stores/chatStore';
+import { getStoredAuthToken } from '@/lib/authToken';
 
 interface UseChatSocketOptions {
   onMessage?: (message: ChatMessage) => void;
@@ -38,8 +39,10 @@ export function useChatSocket(options: UseChatSocketOptions = {}) {
     }
 
     const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+    const token = getStoredAuthToken();
 
     socketRef.current = io(`${baseURL}/chat`, {
+      auth: token ? { token } : undefined,
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
