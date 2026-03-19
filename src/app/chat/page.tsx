@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Box, Text, Center, Loader, Stack, Avatar } from '@mantine/core';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ClientList } from '@/components/chat/ClientList';
@@ -22,7 +22,15 @@ interface CurrentUser {
   } | null;
 }
 
-export default function ChatPage() {
+function ChatPageFallback() {
+  return (
+    <Center style={{ height: '100vh' }}>
+      <Loader />
+    </Center>
+  );
+}
+
+function ChatPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const clientIdFromQuery = searchParams.get('clientId');
@@ -175,5 +183,13 @@ export default function ChatPage() {
         </Box>
       </Box>
     </Box>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<ChatPageFallback />}>
+      <ChatPageContent />
+    </Suspense>
   );
 }
