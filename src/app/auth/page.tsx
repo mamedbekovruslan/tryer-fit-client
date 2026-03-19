@@ -1,12 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Title, Container, Paper, Group, Button } from '@mantine/core';
 import LoginForm from '@/features/auth/login/ui/LoginForm';
 import { default as RegisterForm } from '@/features/auth/ui/RegisterForm/RegisterForm';
+import { useAuth } from '@/providers/AuthProvider';
+import { useRouter } from 'next/navigation';
+import { getDefaultAuthorizedRedirect } from '@/lib/routeAccess';
 
 export default function AuthPage() {
   const [isLoginView, setIsLoginView] = useState(true);
+  const { user, isAuthenticated, isInitializing } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isInitializing || !isAuthenticated || !user) {
+      return;
+    }
+
+    router.replace(getDefaultAuthorizedRedirect(user.user_type));
+  }, [isAuthenticated, isInitializing, router, user]);
 
   return (
     <>
