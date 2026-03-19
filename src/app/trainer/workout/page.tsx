@@ -26,6 +26,7 @@ import { notifications } from '@mantine/notifications';
 import { useAuth } from '@/providers/AuthProvider';
 import UserTypeProtectedRoute from '@/components/UserTypeProtectedRoute';
 import { workoutService, WorkoutCategory, WorkoutProgram } from '@/services/workoutService';
+import { type Client } from '@/services/clientService';
 import { useRouter } from 'next/navigation';
 import { FaPlus, FaEdit, FaTrash, FaDumbbell, FaUsers, FaList } from 'react-icons/fa';
 import { useTrainerWorkoutStore } from '@/stores/trainerWorkoutStore';
